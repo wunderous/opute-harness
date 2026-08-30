@@ -1,0 +1,191 @@
+contractVersion: tunnel-recipe.v1
+recipeId: com.opute.harness.opute-io.unroll
+recipeVersion: 1.0.0
+provider:
+  id: com.opute.cloudflare
+  capabilities: [tunneling]
+bindings:
+  - id: dsh-opute-web
+    hostname: "${vars.inputs.hostname}"
+    localTarget: "${vars.inputs.localTarget}"
+inputs:
+  endpoint:
+    default: https://harness.opute.io/favicon.svg
+    schema: {type: string, format: uri}
+  localListen:
+    default: http://127.0.0.1:3080/favicon.svg
+    schema: {type: string, format: uri}
+  hostname:
+    default: harness.opute.io
+    schema: {type: string, minLength: 1, maxLength: 253}
+  localTarget:
+    default: http://127.0.0.1:3080
+    schema: {type: string, format: uri}
+  tunnelName:
+    default: opute-harness-opute-io
+    schema: {type: string, minLength: 1, maxLength: 253}
+  tokenFile:
+    default: ~/.config/opute/harness-opute-tunnel.token
+    schema: {type: string, minLength: 1}
+  leftoverEnvFile:
+    default: ~/.config/opute/harness-opute-tunnel.env
+    schema: {type: string, minLength: 1}
+  serviceFile:
+    default: ~/.config/systemd/user/opute-harness-cloudflared.service
+    schema: {type: string, minLength: 1}
+  serviceName:
+    default: opute-harness-cloudflared.service
+    schema: {type: string, pattern: '^[A-Za-z0-9_.@:-]+$'}
+  dshEnvFile:
+    default: ~/.config/opute/harness-opute-dsh.env
+    schema: {type: string, minLength: 1}
+  dshServiceFile:
+    default: ~/.config/systemd/user/opute-harness-dsh.service
+    schema: {type: string, minLength: 1}
+  dshServiceName:
+    default: opute-harness-dsh.service
+    schema: {type: string, pattern: '^[A-Za-z0-9_.@:-]+$'}
+  launchTokenFile:
+    default: ~/.config/opute/harness-opute-dsh.launch-token
+    schema: {type: string, minLength: 1}
+  recipeRevision:
+    default: 1.0.5
+    schema: {type: string, pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'}
+compatibility:
+  requiredTools: [run_host_command, inspect_host_service, inspect_host_file, remove_host_file, probe_http_endpoint, delete_cloudflare_tunnel]
+plan:
+  contractVersion: host-plan.v1
+  planId: com.opute.harness.opute-io.unroll
+  generation: 1
+  idempotencyKey: com.opute.harness.opute-io.unroll-${vars.inputs.recipeRevision}-${vars.inputs.hostname}
+  nodes:
+    - id: stop-cloudflared
+      action:
+        tool: run_host_command
+        args:
+          command: timeout 8 systemctl --user stop --no-block ${vars.inputs.serviceName} >/dev/null 2>&1 || true; systemctl --user kill -s SIGTERM ${vars.inputs.serviceName} >/dev/null 2>&1 || true; systemctl --user disable ${vars.inputs.serviceName} >/dev/null 2>&1 || true; systemctl --user daemon-reload >/dev/null 2>&1 || true; true
+          timeoutMs: 20000
+      validate:
+        tool: inspect_host_service
+        args: {uri: "host-service:${vars.tenantId}:user/${vars.inputs.serviceName}", scope: user}
+        assert: [{path: /active, op: eq, value: false}]
+    - id: remove-cloudflared-unit
+      dependsOn: [stop-cloudflared]
+      action:
+        tool: remove_host_file
+        args:
+          path: "${vars.inputs.serviceFile}"
+          confirm: true
+      validate:
+        tool: inspect_host_file
+        args:
+          path: "${vars.inputs.serviceFile}"
+        assert: [{path: /exists, op: eq, value: false}]
+    - id: remove-tunnel-token
+      dependsOn: [remove-cloudflared-unit]
+      action:
+        tool: remove_host_file
+        args:
+          path: "${vars.inputs.tokenFile}"
+          confirm: true
+      validate:
+        tool: inspect_host_file
+        args:
+          path: "${vars.inputs.tokenFile}"
+        assert: [{path: /exists, op: eq, value: false}]
+    - id: remove-leftover-env
+      dependsOn: [remove-tunnel-token]
+      action:
+        tool: remove_host_file
+        args:
+          path: "${vars.inputs.leftoverEnvFile}"
+          confirm: true
+      validate:
+        tool: inspect_host_file
+        args:
+          path: "${vars.inputs.leftoverEnvFile}"
+        assert: [{path: /exists, op: eq, value: false}]
+    - id: unpublish-tunnel
+      dependsOn: [remove-cloudflared-unit, remove-tunnel-token, remove-leftover-env]
+      action:
+        tool: delete_cloudflare_tunnel
+        args:
+          bindingId: dsh-opute-web
+          hostname: "${vars.inputs.hostname}"
+          localTarget: "${vars.inputs.localTarget}"
+          tunnelName: "${vars.inputs.tunnelName}"
+          serviceName: "${vars.inputs.serviceName}"
+          serviceFile: "${vars.inputs.serviceFile}"
+      validate:
+        tool: inspect_host_service
+        args: {uri: "host-service:${vars.tenantId}:user/${vars.inputs.serviceName}", scope: user}
+        assert: [{path: /active, op: eq, value: false}]
+    - id: stop-dsh
+      dependsOn: [unpublish-tunnel]
+      action:
+        tool: run_host_command
+        args:
+          command: timeout 8 systemctl --user stop --no-block ${vars.inputs.dshServiceName} >/dev/null 2>&1 || true; systemctl --user kill -s SIGTERM ${vars.inputs.dshServiceName} >/dev/null 2>&1 || true; systemctl --user disable ${vars.inputs.dshServiceName} >/dev/null 2>&1 || true; fuser -k -TERM 3080/tcp >/dev/null 2>&1 || true; pkill -TERM -f launch-opute-web.js >/dev/null 2>&1 || true; sleep 1; true
+          timeoutMs: 20000
+      validate:
+        tool: inspect_host_service
+        args: {uri: "host-service:${vars.tenantId}:user/${vars.inputs.dshServiceName}", scope: user}
+        assert: [{path: /active, op: eq, value: false}]
+    - id: remove-dsh-unit
+      dependsOn: [stop-dsh]
+      action:
+        tool: remove_host_file
+        args:
+          path: "${vars.inputs.dshServiceFile}"
+          confirm: true
+      validate:
+        tool: inspect_host_file
+        args:
+          path: "${vars.inputs.dshServiceFile}"
+        assert: [{path: /exists, op: eq, value: false}]
+    - id: remove-dsh-env
+      dependsOn: [remove-dsh-unit]
+      action:
+        tool: remove_host_file
+        args:
+          path: "${vars.inputs.dshEnvFile}"
+          confirm: true
+      validate:
+        tool: inspect_host_file
+        args:
+          path: "${vars.inputs.dshEnvFile}"
+        assert: [{path: /exists, op: eq, value: false}]
+    - id: remove-launch-token
+      dependsOn: [remove-dsh-env]
+      action:
+        tool: remove_host_file
+        args:
+          path: "${vars.inputs.launchTokenFile}"
+          confirm: true
+      validate:
+        tool: inspect_host_file
+        args:
+          path: "${vars.inputs.launchTokenFile}"
+        assert: [{path: /exists, op: eq, value: false}]
+    - id: local-gone
+      dependsOn: [remove-launch-token]
+      continueOnFailure: true
+      action:
+        tool: probe_http_endpoint
+        args: {endpoint: "${vars.inputs.localListen}"}
+      validate:
+        tool: probe_http_endpoint
+        args: {endpoint: "${vars.inputs.localListen}"}
+        assert: [{path: /ready, op: eq, value: false}]
+    - id: public-gone
+      dependsOn: [unpublish-tunnel, local-gone]
+      continueOnFailure: true
+      action:
+        tool: probe_http_endpoint
+        args: {endpoint: "${vars.inputs.endpoint}"}
+      validate:
+        tool: probe_http_endpoint
+        args: {endpoint: "${vars.inputs.endpoint}"}
+        timeoutMs: 15000
+        pollIntervalMs: 3000
+        assert: [{path: /ready, op: ne, value: true}]

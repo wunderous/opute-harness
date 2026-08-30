@@ -1,0 +1,36 @@
+{
+  "name": "@opute/dsh-client-ui-opute",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "DSH UI slot cards for Opute inventory tools",
+  "license": "Elastic-2.0",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./client": "./lib/client.js"
+  },
+  "files": [
+    "src/index.js",
+    "src/execution-trace-view.js",
+    "src/trajectory-assemble-trace.js",
+    "lib/client.js"
+  ],
+  "dsh": {
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-api-session-controller",
+        "@deepseek-ai/dsh-api-workspace-controller",
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-chat",
+        "@deepseek-ai/dsh-client-ui-model-selection",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-settings-plugins",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ],
+      "platform": "web"
+    }
+  }
+}

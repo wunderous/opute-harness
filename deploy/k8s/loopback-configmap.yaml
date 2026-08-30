@@ -1,0 +1,12 @@
+# Example: run DSH next to the cell and let the existing Cloudflare connector
+# route harness.opute.io to loopback. Do not set host 0.0.0.0.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opute-harness-launch
+data:
+  listen: "127.0.0.1:3080"
+  trustedHost: "harness.opute.io"
+  mcpEndpoint: "https://mcp.opute.io/mcp"
+  command: |
+    dsh --profile opute-web --no-open --port 3080 --trusted-host harness.opute.io

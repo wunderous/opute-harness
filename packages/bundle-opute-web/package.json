@@ -1,0 +1,32 @@
+{
+  "name": "@opute/dsh-bundle-opute-web",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "DSH bundle: Opute MCP, lockdown, opute agent preset, inventory UI",
+  "license": "Elastic-2.0",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src/index.js",
+    "src/local-tool-name.js",
+    "cordis.patch.yml",
+    "presets"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "@opute/dsh-plugin-mcp-opute": "file:../plugin-mcp-opute",
+    "@opute/dsh-plugin-tool-retrieval": "file:../plugin-tool-retrieval",
+    "@opute/dsh-plugin-tool-lockdown": "file:../plugin-tool-lockdown",
+    "@opute/dsh-plugin-system-prompt": "file:../plugin-system-prompt",
+    "@opute/dsh-plugin-workspace-seed": "file:../plugin-workspace-seed",
+    "@opute/dsh-client-ui-opute": "file:../client-ui-opute"
+  }
+}

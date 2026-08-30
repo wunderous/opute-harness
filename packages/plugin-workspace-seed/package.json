@@ -1,0 +1,16 @@
+{
+  "name": "@opute/dsh-plugin-workspace-seed",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Seed one implicit DSH workspace directory so sessions do not need a folder picker",
+  "license": "Elastic-2.0",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src/index.js",
+    "src/live-default.js",
+    "src/workspace-dir.js"
+  ]
+}

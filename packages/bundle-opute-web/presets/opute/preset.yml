@@ -1,0 +1,3 @@
+name: Opute
+description: Infrastructure agent. Opute MCP tools only; no local shell or filesystem.
+order: 1

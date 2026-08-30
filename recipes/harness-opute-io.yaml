@@ -1,0 +1,288 @@
+contractVersion: tunnel-recipe.v1
+recipeId: com.opute.harness.opute-io
+recipeVersion: 2.0.0
+provider:
+  id: com.opute.cloudflare
+  capabilities: [tunneling]
+bindings:
+  - id: dsh-opute-web
+    hostname: "${vars.inputs.hostname}"
+    localTarget: "${vars.inputs.localTarget}"
+inputs:
+  endpoint:
+    default: https://harness.opute.io/favicon.svg
+    schema: {type: string, format: uri}
+  localListen:
+    default: http://127.0.0.1:3080/favicon.svg
+    schema: {type: string, format: uri}
+  hostname:
+    default: harness.opute.io
+    schema: {type: string, minLength: 1, maxLength: 253}
+  localTarget:
+    default: http://127.0.0.1:3080
+    schema: {type: string, format: uri}
+  tunnelName:
+    default: opute-harness-opute-io
+    schema: {type: string, minLength: 1, maxLength: 253}
+  mcpEndpoint:
+    default: https://mcp.opute.io/mcp
+    schema: {type: string, format: uri}
+  mcpToken:
+    required: true
+    secret: true
+    schema: {type: string, minLength: 8}
+  harnessRoot:
+    default: /home/houman/github/wunderous/opute-harness
+    schema: {type: string, minLength: 1}
+  dshRoot:
+    default: /home/houman/github/wunderous/deepseek-harness
+    schema: {type: string, minLength: 1}
+  nodePath:
+    default: /home/houman/.bun/bin/bun
+    schema: {type: string, minLength: 1}
+  pathPrefix:
+    default: /home/houman/.bun/bin:/home/houman/.local/bin
+    schema: {type: string, minLength: 1}
+  dshEnvFile:
+    default: ~/.config/opute/harness-opute-dsh.env
+    schema: {type: string, minLength: 1}
+  dshServiceFile:
+    default: ~/.config/systemd/user/opute-harness-dsh.service
+    schema: {type: string, minLength: 1}
+  dshServiceName:
+    default: opute-harness-dsh.service
+    schema: {type: string, pattern: '^[A-Za-z0-9_.@:-]+$'}
+  artifactUri:
+    default: https://github.com/cloudflare/cloudflared/releases/download/2026.8.2/cloudflared-linux-amd64
+    schema: {type: string, format: uri}
+  artifactSha256:
+    default: fcfb02b575a52ca1af2e3267af4e1517bcdeb30ac48c834c69abaed3c0576ad2
+    schema: {type: string, pattern: '^[0-9a-fA-F]{64}$'}
+  artifactPath:
+    default: ~/.local/share/opute/providers/com.opute.cloudflare/bin/cloudflared
+    schema: {type: string, minLength: 1}
+  tokenFile:
+    default: ~/.config/opute/harness-opute-tunnel.token
+    schema: {type: string, minLength: 1}
+  tokenFileSystemd:
+    default: '%h/.config/opute/harness-opute-tunnel.token'
+    schema: {type: string, minLength: 1}
+  serviceFile:
+    default: ~/.config/systemd/user/opute-harness-cloudflared.service
+    schema: {type: string, minLength: 1}
+  serviceName:
+    default: opute-harness-cloudflared.service
+    schema: {type: string, pattern: '^[A-Za-z0-9_.@:-]+$'}
+  recipeRevision:
+    default: 2.0.2
+    schema: {type: string, pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'}
+  serviceArtifactPath:
+    default: '%h/.local/share/opute/providers/com.opute.cloudflare/bin/cloudflared'
+    schema: {type: string, minLength: 1}
+compatibility:
+  requiredTools: [ensure_host_artifact, ensure_host_file, ensure_host_service_supervisor, set_host_service_state, inspect_host_service, inspect_host_file, probe_http_endpoint, create_cloudflare_tunnel]
+activation:
+  capability: tunneling
+  servingContract: http-exposure.v1
+  inputBindings:
+    endpoint: endpoint
+plan:
+  contractVersion: host-plan.v1
+  planId: com.opute.harness.opute-io
+  generation: 2
+  idempotencyKey: com.opute.harness.opute-io-${vars.inputs.recipeRevision}-${vars.inputs.hostname}
+  nodes:
+    - id: dsh-env
+      action:
+        tool: ensure_host_file
+        args:
+          path: "${vars.inputs.dshEnvFile}"
+          mode: 384
+          content: |
+            OPUTE_MCP_ENDPOINT=${vars.inputs.mcpEndpoint}
+            OPUTE_MCP_TOKEN=${vars.inputs.mcpToken}
+      validate:
+        tool: inspect_host_file
+        args:
+          path: "${vars.inputs.dshEnvFile}"
+        assert: [{path: /exists, op: eq, value: true}]
+    - id: dsh-unit
+      dependsOn: [dsh-env]
+      action:
+        tool: ensure_host_file
+        args:
+          path: "${vars.inputs.dshServiceFile}"
+          mode: 384
+          content: |
+            [Unit]
+            Description=Opute harness.opute.io DSH opute-web
+            After=network-online.target
+
+            [Service]
+            Type=simple
+            WorkingDirectory=${vars.inputs.harnessRoot}
+            Environment=HOME=%h
+            Environment=DSH_ROOT=${vars.inputs.dshRoot}
+            Environment=PATH=${vars.inputs.pathPrefix}:/usr/bin:/bin
+            EnvironmentFile=-%h/.config/opute/harness-opute-dsh.env
+            ExecStart=${vars.inputs.nodePath} ${vars.inputs.harnessRoot}/scripts/launch-opute-web.js
+            Restart=always
+            RestartSec=3
+
+            [Install]
+            WantedBy=default.target
+      validate:
+        tool: inspect_host_file
+        args:
+          path: "${vars.inputs.dshServiceFile}"
+        assert: [{path: /exists, op: eq, value: true}]
+    - id: dsh-supervisor
+      dependsOn: [dsh-unit]
+      action:
+        tool: ensure_host_service_supervisor
+        args: {scope: user}
+      validate:
+        tool: inspect_host_service
+        args: {uri: "host-service:${vars.tenantId}:user/${vars.inputs.dshServiceName}", scope: user}
+        assert: [{path: /status, op: exists}]
+    - id: dsh-enable
+      dependsOn: [dsh-supervisor]
+      action:
+        tool: set_host_service_state
+        args: {uri: "host-service:${vars.tenantId}:user/${vars.inputs.dshServiceName}", state: enable, scope: user}
+      validate:
+        tool: inspect_host_service
+        args: {uri: "host-service:${vars.tenantId}:user/${vars.inputs.dshServiceName}", scope: user}
+        assert: [{path: /enabled, op: eq, value: true}]
+    - id: dsh-restart
+      dependsOn: [dsh-enable]
+      action:
+        tool: set_host_service_state
+        args: {uri: "host-service:${vars.tenantId}:user/${vars.inputs.dshServiceName}", state: restart, scope: user}
+      validate:
+        tool: inspect_host_service
+        args: {uri: "host-service:${vars.tenantId}:user/${vars.inputs.dshServiceName}", scope: user}
+        timeoutMs: 60000
+        pollIntervalMs: 2000
+        assert: [{path: /active, op: eq, value: true}]
+    - id: local-dsh
+      dependsOn: [dsh-restart]
+      action:
+        tool: probe_http_endpoint
+        args: {endpoint: "${vars.inputs.localListen}"}
+      validate:
+        tool: probe_http_endpoint
+        args: {endpoint: "${vars.inputs.localListen}"}
+        timeoutMs: 120000
+        pollIntervalMs: 3000
+        assert: [{path: /ready, op: eq, value: true}]
+    - id: artifact
+      action:
+        tool: ensure_host_artifact
+        args:
+          uri: "${vars.inputs.artifactUri}"
+          destination: "${vars.inputs.artifactPath}"
+          sha256: "${vars.inputs.artifactSha256}"
+          executable: true
+      validate:
+        tool: inspect_host_file
+        args:
+          path: "${vars.inputs.artifactPath}"
+          expectedSha256: "${vars.inputs.artifactSha256}"
+        assert: [{path: /exists, op: eq, value: true}, {path: /matches, op: eq, value: true}, {path: /executable, op: eq, value: true}]
+    - id: ensure-tunnel
+      dependsOn: [local-dsh, artifact]
+      action:
+        tool: create_cloudflare_tunnel
+        args:
+          bindingId: dsh-opute-web
+          hostname: "${vars.inputs.hostname}"
+          localTarget: "${vars.inputs.localTarget}"
+          tunnelName: "${vars.inputs.tunnelName}"
+          tokenFile: "${vars.inputs.tokenFile}"
+          manageHostConnector: false
+      validate:
+        tool: inspect_host_file
+        args:
+          path: "${vars.inputs.tokenFile}"
+        assert: [{path: /exists, op: eq, value: true}]
+    - id: token-file
+      dependsOn: [ensure-tunnel]
+      action:
+        tool: ensure_host_file
+        args:
+          path: "${vars.inputs.tokenFile}"
+          mode: 384
+          content: |-
+            ${nodes.ensure-tunnel.output.runToken}
+      validate:
+        tool: inspect_host_file
+        args:
+          path: "${vars.inputs.tokenFile}"
+        assert: [{path: /exists, op: eq, value: true}]
+    - id: service-file
+      dependsOn: [token-file]
+      action:
+        tool: ensure_host_file
+        args:
+          path: "${vars.inputs.serviceFile}"
+          mode: 384
+          content: |
+            [Unit]
+            Description=Opute harness.opute.io Cloudflare tunnel connector
+            After=network-online.target
+            Wants=network-online.target
+
+            [Service]
+            ExecStart=${vars.inputs.serviceArtifactPath} tunnel --no-autoupdate run --token-file ${vars.inputs.tokenFileSystemd}
+            Restart=always
+            RestartSec=5
+
+            [Install]
+            WantedBy=default.target
+      validate:
+        tool: inspect_host_file
+        args:
+          path: "${vars.inputs.serviceFile}"
+        assert: [{path: /exists, op: eq, value: true}]
+    - id: supervisor
+      dependsOn: [service-file]
+      action:
+        tool: ensure_host_service_supervisor
+        args: {scope: user}
+      validate:
+        tool: inspect_host_service
+        args: {uri: "host-service:${vars.tenantId}:user/${vars.inputs.serviceName}", scope: user}
+        assert: [{path: /status, op: exists}]
+    - id: enable
+      dependsOn: [supervisor]
+      action:
+        tool: set_host_service_state
+        args: {uri: "host-service:${vars.tenantId}:user/${vars.inputs.serviceName}", state: enable, scope: user}
+      validate:
+        tool: inspect_host_service
+        args: {uri: "host-service:${vars.tenantId}:user/${vars.inputs.serviceName}", scope: user}
+        assert: [{path: /enabled, op: eq, value: true}]
+    - id: restart
+      dependsOn: [enable]
+      action:
+        tool: set_host_service_state
+        args: {uri: "host-service:${vars.tenantId}:user/${vars.inputs.serviceName}", state: restart, scope: user}
+      validate:
+        # cloudflared reports inactive during its first-second precheck.
+        tool: inspect_host_service
+        args: {uri: "host-service:${vars.tenantId}:user/${vars.inputs.serviceName}", scope: user}
+        timeoutMs: 60000
+        pollIntervalMs: 2000
+        assert: [{path: /active, op: eq, value: true}]
+    - id: endpoint
+      dependsOn: [restart]
+      action:
+        tool: probe_http_endpoint
+        args: {endpoint: "${vars.inputs.endpoint}"}
+      validate:
+        tool: probe_http_endpoint
+        args: {endpoint: "${vars.inputs.endpoint}"}
+        timeoutMs: 90000
+        pollIntervalMs: 3000
+        assert: [{path: /ready, op: eq, value: true}]

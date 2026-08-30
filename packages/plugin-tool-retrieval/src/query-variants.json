@@ -1,0 +1,20 @@
+{
+  "list_managed_vms": [
+    "list the vms",
+    "list my vms",
+    "list all durable vms",
+    "list all vms across hosts",
+    "show my virtual machines across all hosts",
+    "list managed vms"
+  ],
+  "list_vms": [
+    "list all vms on host",
+    "list the live vms on this host",
+    "vms on host"
+  ],
+  "list_agents": [
+    "list the agents",
+    "list host agents",
+    "which hosts are connected"
+  ]
+}

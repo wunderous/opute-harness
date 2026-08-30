@@ -1,0 +1,27 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .: {}
+
+  packages/bundle-opute-web:
+    dependencies:
+      '@opute/dsh-client-ui-opute':
+        specifier: file:../client-ui-opute
+        version: link:../client-ui-opute
+      '@opute/dsh-plugin-mcp-opute':
+        specifier: file:../plugin-mcp-opute
+        version: link:../plugin-mcp-opute
+      '@opute/dsh-plugin-tool-lockdown':
+        specifier: file:../plugin-tool-lockdown
+        version: link:../plugin-tool-lockdown
+
+  packages/client-ui-opute: {}
+
+  packages/plugin-mcp-opute: {}
+
+  packages/plugin-tool-lockdown: {}

@@ -1,0 +1,22 @@
+{
+  "name": "@opute/dsh-plugin-tool-retrieval",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Dense+lexical tool ranking for the Opute DSH web surface (Platform fusion contract)",
+  "license": "Elastic-2.0",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src/index.js",
+    "src/rank.js",
+    "src/query.js",
+    "src/query-variants.js",
+    "src/retrieval-tokens.js",
+    "src/query-variants.json",
+    "src/trace.js",
+    "src/projection.js",
+    "src/types.d.ts"
+  ]
+}

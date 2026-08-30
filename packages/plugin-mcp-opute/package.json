@@ -1,0 +1,25 @@
+{
+  "name": "@opute/dsh-plugin-mcp-opute",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "2026-07-28 Opute MCP Streamable HTTP bridge for DSH (no initialize)",
+  "license": "Elastic-2.0",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src/index.js",
+    "src/bridge.js",
+    "src/protocol.js",
+    "src/public-name.js",
+    "src/local-name.js",
+    "src/surface.js",
+    "src/describe-tool.js",
+    "src/compact-result.js",
+    "src/inventory-guidance.js",
+    "src/vm-inventory-app.js",
+    "src/tool-prefix.js",
+    "src/host-kernels.js"
+  ]
+}

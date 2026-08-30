@@ -1,0 +1,106 @@
+# Source overlay for `node scripts/launch-opute-web.js`.
+# Relative entries are anchored to this file so the profile does not need
+# `@opute/*` on NODE_PATH (ESM ignores NODE_PATH).
+
+# No model-facing system-prompt prose. DSH defaults inject harness identity,
+# the checkout path, the Web GUI orientation, and a coding-agent persona.
+- id: system-prompt
+  config:
+    includeHarnessIdentity: false
+    includeRuntimeContext: false
+    persona: ''
+
+# Restate every web-runtime key: a patch replaces the row's entire config.
+# `surfaceContext: false` drops harness:source and app:web-surface.
+- id: web-runtime
+  inject: [webStartup]
+  config:
+    openBrowser: !!js ctx.webStartup.openBrowser
+    printUrl: true
+    surfaceContext: false
+    trustedHosts: !!js ctx.webStartup.trustedHosts
+
+- id: agent-presets
+  name: '@deepseek-ai/dsh-agent-presets'
+  config:
+    default: opute
+    includeShippedRoot: false
+    includeUserRoot: false
+    roots:
+      - path: !!js process.env.OPUTE_HARNESS_PRESET_ROOT
+        trust: system
+
+- id: directory-picker
+  disabled: true
+
+- id: ui-workspace
+  disabled: true
+
+- id: file-reference-local
+  disabled: true
+
+# File-reference renderer also registers ui:deliverable-file-references.
+- id: ui-deliverables
+  disabled: true
+
+# Official DeepSeek is not an Opute provider. Disabling the adapter also
+# completes first-run onboarding (adapter-absent) without the API-key modal.
+- id: llm-deepseek
+  disabled: true
+
+# Stock default is deepseek-official. With that adapter gone, a leftover
+# selection leaves the composer inert while the seat still shows the stale id.
+- id: agent-default-model
+  config:
+    provider: openrouter
+    model: anthropic/claude-haiku-4.5
+
+- id: plugin-package-inventory-deepseek
+  disabled: true
+
+# OpenRouter is a pi-ai catalog route. Ollama is not; it is a local
+# OpenAI-compatible server and must be declared outright.
+- id: llm-pi-ai
+  config:
+    providers:
+      openrouter:
+        displayName: OpenRouter
+        apiKeyEnv: OPENROUTER_API_KEY
+      ollama:
+        displayName: Ollama
+        api: openai-completions
+        baseURL: !!js process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434/v1'
+        headers:
+          Authorization: Bearer ollama
+        models:
+          - id: llama3.2
+            name: Llama 3.2
+            contextWindow: 131072
+          - id: qwen2.5
+            name: Qwen 2.5
+            contextWindow: 131072
+          - id: mistral
+            name: Mistral
+            contextWindow: 32768
+
+- insert:
+    - id: opute-workspace-seed
+      name: '../plugin-workspace-seed/src/index.js'
+
+    - id: opute-system-prompt
+      name: '../plugin-system-prompt/src/index.js'
+      config:
+        instructions: ''
+
+    - id: opute-tool-lockdown
+      name: '../plugin-tool-lockdown/src/index.js'
+
+    # Stock dsh-mcp-client sends initialize; Opute 2026-07-28 rejects it.
+    - id: mcp-opute
+      name: '../plugin-mcp-opute/src/index.js'
+
+    - id: opute-tool-retrieval
+      name: '../plugin-tool-retrieval/src/index.js'
+
+    - id: ui-opute
+      name: '../client-ui-opute/src/index.js'
