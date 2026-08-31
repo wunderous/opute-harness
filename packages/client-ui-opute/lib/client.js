@@ -1334,7 +1334,7 @@ window.__ModuleLoader__.load({ id: '@opute/dsh-client-ui-opute', factory: (requi
     ctx.slots.inject('settings.onboarding', function* () {
       for (var i = 0; i < DSH_ONBOARDING_IDS.length; i++) {
         yield ctx.slots.register(
-          { name: 'settings.onboarding', id: DSH_ONBOARDING_IDS[i] },
+          { name: 'settings.onboarding', id: DSH_ONBOARDING_IDS[i], priority: -10 },
           SkipDshOnboarding,
         )
       }

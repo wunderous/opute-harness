@@ -143,9 +143,10 @@ if (!uiClient.includes("name: 'sidebar.brand.mark'")
   || !uiClient.includes('data-opute-brand-mark')
   || !uiClient.includes('data-opute-brand-name')
   || !uiClient.includes('DSH_ONBOARDING_IDS')
+  || !uiClient.includes("name: 'settings.onboarding', id: DSH_ONBOARDING_IDS[i], priority: -10")
   || !uiClient.includes("'welcome-notice'")
   || !uiClient.includes("'deepseek-official'")) {
-  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: ui-opute must occupy DSH brand slots and skip DeepSeek onboarding')
+  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: ui-opute must occupy DSH brand slots and shadow DSH onboarding at priority -10')
   process.exit(1)
 }
 const removedBrandingWorkarounds = [

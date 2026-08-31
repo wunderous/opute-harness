@@ -34,6 +34,19 @@ web-shell inputs until a thin web-surface fork owns them.
 Public hosting is Cloudflare Tunnel → `127.0.0.1:3080` with
 `--trusted-host harness.opute.io`. See [deploy/README.md](deploy/README.md).
 
+## CI test contract
+
+The committed test suite is deterministic: it does not call an LLM, Ollama,
+OpenRouter, or any other provider, so GitHub Actions does not need an AI secret.
+Provider-backed model behavior belongs in a separate opt-in lane; when one is
+added, use the approved OpenRouter `ibm/granite4.1:3b` route rather than a
+local model.
+
+`pnpm verify:coexistence` additionally checks a sibling Platform checkout and
+the public chat origin, so it remains an operator/local integration gate. Its
+unit test skips honestly in a standalone GitHub checkout where `../opute` is
+not present.
+
 ## Layout
 
 ```

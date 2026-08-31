@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import path from 'node:path'
 import { oputeWorkspaceDir } from './workspace-dir.js'
 
 test('explicit OPUTE_HARNESS_WORKSPACE_DIR wins', () => {
@@ -8,5 +9,5 @@ test('explicit OPUTE_HARNESS_WORKSPACE_DIR wins', () => {
 
 test('defaults under DSH_HOME', () => {
   const dir = oputeWorkspaceDir({ DSH_HOME: '/home/me/.dsh', HOME: '/home/me' })
-  assert.equal(dir, '/home/me/.dsh/opute-workspace')
+  assert.equal(dir, path.join('/home/me/.dsh', 'opute-workspace'))
 })
