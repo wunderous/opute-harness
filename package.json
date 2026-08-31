@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Opute DeepSeek Harness plugin suite for harness.opute.io",
+  "description": "Opute Harness plugin suite for harness.opute.io",
   "license": "Elastic-2.0",
   "packageManager": "pnpm@10.14.0",
   "workspaces": [

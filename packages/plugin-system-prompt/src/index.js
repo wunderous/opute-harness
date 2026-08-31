@@ -8,14 +8,33 @@ export const SETTINGS_NAMESPACE = 'opute-system-prompt'
 export const INSTRUCTIONS_SECTION = 'opute:instructions'
 
 /**
+ * Product identity for the complete section. Matches Platform chat so the
+ * model names Opute, not the upstream DSH identity this overlay strips.
+ * Inventory routing stays in tool descriptions, not here.
+ */
+export const DEFAULT_INSTRUCTIONS = [
+  'You are Opute Assistant, helping manage infrastructure nodes and Kubernetes clusters.',
+  'Entity context is not preloaded into these instructions. Retrieve current names, identifiers, relationships, and status through the available discovery/read tools.',
+  'Use identifiers exactly as returned by tool results. Do not infer, synthesize, or copy identifiers from examples or static descriptions.',
+  'When a dependent tool requires an identifier that is not already present in the conversation, call the relevant discovery tool first and use its returned value.',
+].join('\n')
+
+/**
  * Order 0 sits in the deployment-persona slot. `complete: true` makes this
  * the sole system-prompt section so stripped DSH identity/surface rows cannot
- * leak back in. Empty text drops at render.
+ * leak back in. Empty text (user cleared the card) drops at render.
  */
 export const INSTRUCTIONS_ORDER = 0
 
 export function normalizeInstructions(value) {
   return typeof value === 'string' ? value : ''
+}
+
+/** Composition default is Opute identity; an explicit string (including '') wins. */
+export function resolveInstructions(config = {}) {
+  return typeof config.instructions === 'string'
+    ? config.instructions
+    : DEFAULT_INSTRUCTIONS
 }
 
 /**
@@ -26,14 +45,14 @@ export function normalizeInstructions(value) {
 export function instructionsSchema() {
   function schema(value) {
     const source = value && typeof value === 'object' ? value : {}
-    return { instructions: normalizeInstructions(source.instructions) }
+    return { instructions: resolveInstructions(source) }
   }
   schema.type = 'object'
   schema.dict = { instructions: { type: 'string' } }
   schema.toJSON = () => ({
     type: 'object',
     properties: {
-      instructions: { type: 'string', default: '' },
+      instructions: { type: 'string', default: DEFAULT_INSTRUCTIONS },
     },
   })
   return schema
@@ -47,7 +66,7 @@ export function instructionsSchema() {
  * @param {{ installSettingsSection?: Function, Schema?: object }} [settingsApi]
  */
 export function applySystemPrompt(ctx, config = {}, settingsApi) {
-  const entry = { instructions: normalizeInstructions(config.instructions) }
+  const entry = { instructions: resolveInstructions(config) }
   let current = () => entry
 
   ctx.effect(() => ctx.systemPrompt.section({

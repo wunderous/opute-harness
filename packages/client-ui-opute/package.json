@@ -2,7 +2,7 @@
   "name": "@opute/dsh-client-ui-opute",
   "version": "0.1.0",
   "type": "module",
-  "description": "DSH UI slot cards for Opute inventory tools",
+  "description": "Opute chrome (brand, inventory cards, execution trace) for the DSH web surface",
   "license": "Elastic-2.0",
   "main": "./src/index.js",
   "exports": {
@@ -11,6 +11,7 @@
   },
   "files": [
     "src/index.js",
+    "src/brand.js",
     "src/execution-trace-view.js",
     "src/trajectory-assemble-trace.js",
     "lib/client.js"

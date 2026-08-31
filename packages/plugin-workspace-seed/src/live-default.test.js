@@ -13,7 +13,7 @@ test('keeps a selection whose provider is still mounted', () => {
   )
 })
 
-test('rewrites an official DeepSeek default onto OpenRouter', () => {
+test('rewrites an unroutable official-adapter default onto OpenRouter', () => {
   assert.deepEqual(
     liveDefaultSelection(['openrouter', 'ollama'], { provider: 'deepseek-official', model: 'deepseek-v4-flash' }),
     { provider: 'openrouter', model: OPUTE_OPENROUTER_DEFAULT_MODEL },

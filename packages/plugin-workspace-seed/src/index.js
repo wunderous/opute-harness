@@ -18,7 +18,7 @@ export async function apply(ctx) {
   const extras = extraWorkspaceIds(ctx.workspaceRegistry.list(), opute.path)
   for (const id of extras) await ctx.workspaceRegistry.delete(id)
 
-  // Settings.yaml can keep a DeepSeek default after llm-deepseek is disabled.
+  // Settings.yaml can keep an llm-deepseek default after that adapter is disabled.
   // The composition overlay loses to that user layer, so rewrite it here.
   const next = liveDefaultSelection(
     ctx.llm.listProviders().map((provider) => provider.id),

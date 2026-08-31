@@ -49,10 +49,10 @@ inputs:
     default: ~/.config/opute/harness-opute-dsh.launch-token
     schema: {type: string, minLength: 1}
   recipeRevision:
-    default: 1.0.5
+    default: 1.0.6
     schema: {type: string, pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'}
 compatibility:
-  requiredTools: [run_host_command, inspect_host_service, inspect_host_file, remove_host_file, probe_http_endpoint, delete_cloudflare_tunnel]
+  requiredTools: [run_host_command, inspect_host_service, inspect_host_file, remove_host_file, probe_http_endpoint, opute.capability.tunneling.remove-host-tunnel]
 plan:
   contractVersion: host-plan.v1
   planId: com.opute.harness.opute-io.unroll
@@ -108,7 +108,7 @@ plan:
     - id: unpublish-tunnel
       dependsOn: [remove-cloudflared-unit, remove-tunnel-token, remove-leftover-env]
       action:
-        tool: delete_cloudflare_tunnel
+        tool: opute.capability.tunneling.remove-host-tunnel
         args:
           bindingId: dsh-opute-web
           hostname: "${vars.inputs.hostname}"

@@ -18,7 +18,7 @@ if [[ ! -d node_modules/@opute ]]; then
 fi
 
 if [[ ! -f "$DSH_ROOT/apps/web/dist/index.html" ]]; then
-  echo "opute-harness: building sibling DeepSeek Harness frontend (once)"
+  echo "opute-harness: building sibling DSH frontend (once)"
   bash "$ROOT/scripts/build-dsh.sh"
 fi
 

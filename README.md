@@ -1,15 +1,16 @@
 # Opute Harness
 
-DeepSeek Harness **plugin suite** for [harness.opute.io](https://harness.opute.io).
+Opute **plugin suite** for [harness.opute.io](https://harness.opute.io).
 
-This is not a fork of DeepSeek Harness and not a move of `platform.opute.io/chat`.
+This is not a fork of upstream DSH and not a move of `platform.opute.io/chat`.
 The Platform chat UI stays on Opute. This process boots `dsh --profile opute-web`,
 connects to [mcp.opute.io](https://mcp.opute.io) over Streamable HTTP, and
-disables host-local bash/fs tools.
+disables host-local bash/fs tools. The web chrome (name, logo, title, favicon,
+system instructions) is Opute; DSH remains the execution runtime.
 
 ## Run (loopback)
 
-1. Install [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh` on `PATH`), or use the sibling checkout `../deepseek-harness` (`pnpm dsh`).
+1. Install upstream DSH (`dsh` on `PATH`), or use the sibling checkout `../deepseek-harness` (`pnpm dsh`).
 2. Add the bundle to a profile:
 
    ```sh

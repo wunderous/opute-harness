@@ -74,13 +74,13 @@ inputs:
     default: opute-harness-cloudflared.service
     schema: {type: string, pattern: '^[A-Za-z0-9_.@:-]+$'}
   recipeRevision:
-    default: 2.0.2
+    default: 2.0.3
     schema: {type: string, pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'}
   serviceArtifactPath:
     default: '%h/.local/share/opute/providers/com.opute.cloudflare/bin/cloudflared'
     schema: {type: string, minLength: 1}
 compatibility:
-  requiredTools: [ensure_host_artifact, ensure_host_file, ensure_host_service_supervisor, set_host_service_state, inspect_host_service, inspect_host_file, probe_http_endpoint, create_cloudflare_tunnel]
+  requiredTools: [ensure_host_artifact, ensure_host_file, ensure_host_service_supervisor, set_host_service_state, inspect_host_service, inspect_host_file, probe_http_endpoint, opute.capability.tunneling.ensure-host-tunnel]
 activation:
   capability: tunneling
   servingContract: http-exposure.v1
@@ -193,7 +193,7 @@ plan:
     - id: ensure-tunnel
       dependsOn: [local-dsh, artifact]
       action:
-        tool: create_cloudflare_tunnel
+        tool: opute.capability.tunneling.ensure-host-tunnel
         args:
           bindingId: dsh-opute-web
           hostname: "${vars.inputs.hostname}"

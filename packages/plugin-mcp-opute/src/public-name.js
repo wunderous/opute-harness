@@ -7,7 +7,7 @@ const HASH_LENGTH = 12
 export const OPUTE_MCP_SERVER_NAME = 'opute'
 
 /**
- * Model-facing DSH name: `mcp__opute__<rawName>`, hashed when the DeepSeek
+ * Model-facing DSH name: `mcp__opute__<rawName>`, hashed when the upstream
  * 64-char / `[A-Za-z0-9_-]` contract would otherwise collide.
  */
 export function publicToolName(rawName, serverName = OPUTE_MCP_SERVER_NAME) {

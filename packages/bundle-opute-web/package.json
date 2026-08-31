@@ -2,7 +2,7 @@
   "name": "@opute/dsh-bundle-opute-web",
   "version": "0.1.0",
   "type": "module",
-  "description": "DSH bundle: Opute MCP, lockdown, opute agent preset, inventory UI",
+  "description": "Opute MCP, lockdown, Opute agent preset, and Opute chrome for the web surface",
   "license": "Elastic-2.0",
   "main": "./src/index.js",
   "exports": {

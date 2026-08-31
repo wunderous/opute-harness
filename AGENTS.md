@@ -1,8 +1,8 @@
 # Opute Harness Agent Guide
 
-Sibling of `opute/` and `opute-host-agent/`. This repository publishes **DeepSeek
-Harness (DSH) bundles**, not a fork of `deepseek-harness` and not a lift of
-`platform.opute.io/chat`.
+Sibling of `opute/` and `opute-host-agent/`. This repository publishes the
+**Opute web profile** (a DSH overlay) for `https://harness.opute.io`, not a
+fork of upstream DSH and not a lift of `platform.opute.io/chat`.
 
 ## Ownership
 
@@ -23,7 +23,7 @@ Harness (DSH) bundles**, not a fork of `deepseek-harness` and not a lift of
 | `@opute/dsh-plugin-tool-retrieval` | Dense+lexical top-N tool surface (`dense-lexical-rank-fusion-v1`). Ranking is advisory (rank-1 is order; `toolChoice` stays auto). Query is the last claimed user text only — no last-N conversation tail. Generated `queryVariants` are document-side views. Emits UI-only `opute/execution-trace` (one log event per assemble stage: query, scores, named context sizes). |
 | `@opute/dsh-plugin-tool-lockdown` | `tools/pre-execute` allowlist: `mcp__opute__*` only |
 | `@opute/dsh-plugin-workspace-seed` | Implicit `$DSH_HOME/opute-workspace` so sessions need no folder picker |
-| `@opute/dsh-plugin-system-prompt` | DSH settings namespace `opute-system-prompt` (`instructions`). Empty complete section by default; Settings → Plugins writes the user layer. |
+| `@opute/dsh-plugin-system-prompt` | DSH settings namespace `opute-system-prompt` (`instructions`). Default is Opute Assistant identity (complete section); Settings → Plugins edits the user layer. |
 | `@opute/dsh-client-ui-opute` | Session rail (no workspace chrome) + inventory cards / MCP Apps iframe + Execution Trace header + Trajectory assemble-stage rows |
 
 ## MCP Apps
@@ -33,7 +33,7 @@ Stock DSH (`dsh-mcp-client` / `ui-tool`) has no Opute inventory cards. This over
 - `client-ui-opute` ports Platform's `VmSummaryCard` layout into the turn tail for `list_vms` / `list_managed_vms` (snapshot of the tool payload, including flattened durable `metadata` stats). The tool-call row stays a one-line summary. No live `InfrastructureContext`, no VM detail routes. DSH owns conversation location `key` (`definition.kind`); overlay still sets `key: 'opute-vm-inventory'` for older DSH until the sibling bump.
 - `plugin-mcp-opute` still advertises `io.modelcontextprotocol/ui` and prefetches `ui://opute/vm-inventory` into `presentationMeta`. Other inventory tools keep the list card.
 
-The Opute profile ships **no baked system-prompt prose** (host-plane DSH identity, checkout, web-surface, and deliverable rows are off). User-authored instructions live in the `opute-system-prompt` settings namespace and the Settings → Plugins card — empty by default, complete so they are the sole section. Inventory routing lives in tool descriptions and ranking, not the system prompt. Assemble diagnostics (`opute/execution-trace`) are UI-only: session-header Execution Trace plus Trajectory context rows (one per assemble stage). They must not be written back into PromptAssembly. Ranking stays advisory.
+The Opute profile ships **Opute Assistant identity** as the complete system-prompt section (host-plane DSH identity, checkout, web-surface, and deliverable rows stay off). User-authored edits live in the `opute-system-prompt` settings namespace and the Settings → Plugins card. Inventory routing lives in tool descriptions and ranking, not the system prompt. For “list the clusters/VMs”, the model should call `mcp__opute__host__list_clusters` / `mcp__opute__host__list_vms` with `{}` or `{fast}` — **no `hostId`**. Rank-1 `mcp__opute__platform__list_managed_*` is advisory; that path hits Platform Postgres and can `ECONNREFUSED` while `/vms` and live host inventory still work. Do not document bash/`hostId` recovery for Host Agent tools. Assemble diagnostics (`opute/execution-trace`) are UI-only: session-header Execution Trace plus Trajectory context rows (one per assemble stage). They must not be written back into PromptAssembly. Ranking stays advisory. Chrome branding (sidebar/hero mark, wordmark, document title, favicon, welcome copy) is the `ui-opute` overlay; do not remount `ui-brand-official`.
 
 ## Launch
 

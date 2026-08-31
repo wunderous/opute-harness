@@ -9,8 +9,9 @@
 #   OPUTE_MCP_ENDPOINT         default http://127.0.0.1:9091/mcp
 #   OPUTE_MCP_TOKEN            Bearer for mcp.opute.io (opat_* or cell token)
 
-# No model-facing system-prompt prose. DSH defaults inject harness identity,
-# the checkout path, the Web GUI orientation, and a coding-agent persona.
+# Opute identity is the complete system-prompt section. DSH defaults would
+# inject harness identity, the checkout path, the Web GUI orientation, and a
+# coding-agent persona — those stay off.
 - id: system-prompt
   config:
     includeHarnessIdentity: false
@@ -51,13 +52,19 @@
 - id: ui-deliverables
   disabled: true
 
-# Official DeepSeek is not an Opute provider. Disabling the adapter also
+# Official whale / "DeepSeek Harness" wordmark. ui-opute fills the same
+# slots with the Opute house mark at a lower priority as a second belt.
+- id: ui-brand-official
+  disabled: true
+
+# The stock llm-deepseek adapter is not an Opute provider. Disabling it also
 # completes first-run onboarding (adapter-absent) without the API-key modal.
 - id: llm-deepseek
   disabled: true
 
-# Stock default is deepseek-official. With that adapter gone, a leftover
-# selection leaves the composer inert while the seat still shows the stale id.
+# Stock default is deepseek-official (upstream adapter id). With that
+# adapter gone, a leftover selection leaves the composer inert while the seat
+# still shows the stale id.
 - id: agent-default-model
   config:
     provider: openrouter
@@ -98,7 +105,11 @@
     - id: opute-system-prompt
       name: '@opute/dsh-plugin-system-prompt'
       config:
-        instructions: ''
+        instructions: |
+          You are Opute Assistant, helping manage infrastructure nodes and Kubernetes clusters.
+          Entity context is not preloaded into these instructions. Retrieve current names, identifiers, relationships, and status through the available discovery/read tools.
+          Use identifiers exactly as returned by tool results. Do not infer, synthesize, or copy identifiers from examples or static descriptions.
+          When a dependent tool requires an identifier that is not already present in the conversation, call the relevant discovery tool first and use its returned value.
 
     - id: opute-tool-lockdown
       name: '@opute/dsh-plugin-tool-lockdown'

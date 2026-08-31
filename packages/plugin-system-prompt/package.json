@@ -2,7 +2,7 @@
   "name": "@opute/dsh-plugin-system-prompt",
   "version": "0.1.0",
   "type": "module",
-  "description": "User-editable Opute system instructions via DSH settings",
+  "description": "Default Opute identity plus user-editable system instructions via DSH settings",
   "license": "Elastic-2.0",
   "main": "./src/index.js",
   "exports": {

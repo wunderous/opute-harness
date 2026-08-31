@@ -43,7 +43,6 @@ const sourcePatch = readFileSync(
 )
 
 const promptProse = [
-  'Opute Assistant',
   'You are an AI agent powered by DeepSeek Harness',
   'DeepSeek Harness implementation checkout',
   'DeepSeek Harness Web GUI',
@@ -53,7 +52,13 @@ const promptProse = [
 for (const [label, text] of [['preset', composition], ['bundle', bundlePatch], ['source', sourcePatch]]) {
   const leaked = promptProse.filter((fragment) => text.includes(fragment))
   if (leaked.length > 0) {
-    console.error(`OPUTE_HARNESS_LOCKDOWN_FAIL: ${label} must ship no system-prompt prose: ${leaked.join(', ')}`)
+    console.error(`OPUTE_HARNESS_LOCKDOWN_FAIL: ${label} must not leak DSH system-prompt identity: ${leaked.join(', ')}`)
+    process.exit(1)
+  }
+}
+for (const [label, text] of [['bundle', bundlePatch], ['source', sourcePatch]]) {
+  if (!text.includes('You are Opute Assistant, helping manage infrastructure nodes and Kubernetes clusters.')) {
+    console.error(`OPUTE_HARNESS_LOCKDOWN_FAIL: ${label} must ship Opute identity as default instructions`)
     process.exit(1)
   }
 }
@@ -81,7 +86,7 @@ if (!bundlePatch.includes('id: directory-picker') || !bundlePatch.includes('disa
   process.exit(1)
 }
 
-for (const id of ['directory-picker', 'ui-workspace', 'file-reference-local', 'ui-deliverables']) {
+for (const id of ['directory-picker', 'ui-workspace', 'file-reference-local', 'ui-deliverables', 'ui-brand-official']) {
   if (!bundlePatch.includes(`id: ${id}`) || !sourcePatch.includes(`id: ${id}`)) {
     console.error(`OPUTE_HARNESS_LOCKDOWN_FAIL: ${id} must be disabled in both patches`)
     process.exit(1)
@@ -115,6 +120,10 @@ for (const [label, text] of [['bundle', bundlePatch], ['source', sourcePatch]]) 
     console.error(`OPUTE_HARNESS_LOCKDOWN_FAIL: llm-deepseek must be disabled in ${label} patch`)
     process.exit(1)
   }
+  if (!text.includes('id: ui-brand-official') || !/id: ui-brand-official\n\s+disabled: true/.test(text)) {
+    console.error(`OPUTE_HARNESS_LOCKDOWN_FAIL: ui-brand-official must be disabled in ${label} patch`)
+    process.exit(1)
+  }
   if (!text.includes('id: llm-pi-ai') || !text.includes('openrouter:') || !text.includes('ollama:')) {
     console.error(`OPUTE_HARNESS_LOCKDOWN_FAIL: ${label} patch must default llm-pi-ai to OpenRouter and Ollama`)
     process.exit(1)
@@ -127,6 +136,19 @@ for (const [label, text] of [['bundle', bundlePatch], ['source', sourcePatch]]) 
 
 if (!uiClient.includes('watchUnroutableModel') || !uiClient.includes('routable !== false')) {
   console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: ui-opute must remap sessions whose model provider is not mounted')
+  process.exit(1)
+}
+if (!uiClient.includes("name: 'sidebar.brand.mark'")
+  || !uiClient.includes("name: 'sidebar.brand.name'")
+  || !uiClient.includes("name: 'conversation.hero.brand.mark'")
+  || !uiClient.includes('data-opute-brand-mark')
+  || !uiClient.includes('data-opute-brand-name')
+  || !uiClient.includes('applyOputeChrome')
+  || !uiClient.includes('rewriteProductTitle')
+  || !uiClient.includes('oputeFaviconHref')
+  || !uiClient.includes("id: 'welcome-notice'")
+  || !uiClient.includes("id: 'deepseek-official'")) {
+  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: ui-opute must occupy DSH brand slots, rewrite product chrome, and skip DeepSeek onboarding')
   process.exit(1)
 }
 
@@ -228,8 +250,10 @@ const systemPromptPlugin = readFileSync(
 if (!systemPromptPlugin.includes('complete: true')
   || !systemPromptPlugin.includes('opute:instructions')
   || !systemPromptPlugin.includes('installSettingsSection')
-  || !systemPromptPlugin.includes("SETTINGS_NAMESPACE = 'opute-system-prompt'")) {
-  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: opute-system-prompt must register a complete instructions section on a settings namespace')
+  || !systemPromptPlugin.includes("SETTINGS_NAMESPACE = 'opute-system-prompt'")
+  || !systemPromptPlugin.includes('DEFAULT_INSTRUCTIONS')
+  || !systemPromptPlugin.includes('You are Opute Assistant, helping manage infrastructure nodes and Kubernetes clusters.')) {
+  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: opute-system-prompt must register a complete Opute identity section on a settings namespace')
   process.exit(1)
 }
 if (!bundlePatch.includes('opute-system-prompt') || !sourcePatch.includes('plugin-system-prompt/src/index.js')) {

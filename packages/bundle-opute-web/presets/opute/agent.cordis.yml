@@ -1,6 +1,7 @@
 # Opute agent preset: no host bash/fs/pwsh. MCP tools come from mcp-opute.
 # System instructions are the host-plane `opute-system-prompt` settings
-# namespace (Settings → Plugins), not a preset persona.
+# namespace (Opute Assistant identity by default; Settings → Plugins to edit),
+# not a preset persona.
 
 # ── compaction ──────────────────────────────────────────────────────────────
 
