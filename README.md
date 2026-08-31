@@ -5,8 +5,10 @@ Opute **plugin suite** for [harness.opute.io](https://harness.opute.io).
 This is not a fork of upstream DSH and not a move of `platform.opute.io/chat`.
 The Platform chat UI stays on Opute. This process boots `dsh --profile opute-web`,
 connects to [mcp.opute.io](https://mcp.opute.io) over Streamable HTTP, and
-disables host-local bash/fs tools. The web chrome (name, logo, title, favicon,
-system instructions) is Opute; DSH remains the execution runtime.
+disables host-local bash/fs tools. The Opute overlay owns the visible marks and
+system instructions, and the DSH build is given the Opute document title; DSH
+remains the execution runtime. Static PWA assets and conversation copy remain
+web-shell inputs until a thin web-surface fork owns them.
 
 ## Run (loopback)
 

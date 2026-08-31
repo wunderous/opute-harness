@@ -96,12 +96,6 @@
 
     - id: opute-system-prompt
       name: '../plugin-system-prompt/src/index.js'
-      config:
-        instructions: |
-          You are Opute Assistant, helping manage infrastructure nodes and Kubernetes clusters.
-          Entity context is not preloaded into these instructions. Retrieve current names, identifiers, relationships, and status through the available discovery/read tools.
-          Use identifiers exactly as returned by tool results. Do not infer, synthesize, or copy identifiers from examples or static descriptions.
-          When a dependent tool requires an identifier that is not already present in the conversation, call the relevant discovery tool first and use its returned value.
 
     - id: opute-tool-lockdown
       name: '../plugin-tool-lockdown/src/index.js'

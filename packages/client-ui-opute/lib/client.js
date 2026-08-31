@@ -1067,110 +1067,8 @@ window.__ModuleLoader__.load({ id: '@opute/dsh-client-ui-opute', factory: (requi
   // publishes uiConversation. A static inject of uiConversation deadlocks boot.
   var OPUTE_INSTRUCTIONS_NS = 'opute-system-prompt'
 
-  // Keep in sync with src/brand.js. This factory cannot import it.
-  var OPUTE_PRODUCT_TITLE = 'Opute'
+  // Opute house mark used by the browser brand-slot occupants.
   var OPUTE_MARK_PATH = 'M12 2L2 12H5V22H19V12H22L12 2Z'
-  var OPUTE_BRAND_PRIORITY = -10
-  var DSH_PRODUCT_TITLES = ['DeepSeek Harness', 'DSH Local Build', 'DSH 本地构建']
-  var BRANDED_COPY = [
-    ['DeepSeek Harness', OPUTE_PRODUCT_TITLE],
-    ['DSH Local Build', OPUTE_PRODUCT_TITLE],
-    ['DSH 本地构建', OPUTE_PRODUCT_TITLE],
-    ['Into the Unknown', OPUTE_PRODUCT_TITLE],
-    ['探索未至之境', OPUTE_PRODUCT_TITLE],
-  ]
-
-  function rewriteProductTitle(title, product) {
-    var current = typeof title === 'string' ? title : ''
-    var name = product || OPUTE_PRODUCT_TITLE
-    for (var i = 0; i < DSH_PRODUCT_TITLES.length; i++) {
-      var suffix = DSH_PRODUCT_TITLES[i]
-      if (current === suffix) return name
-      var tail = ' — ' + suffix
-      if (current.endsWith(tail)) return current.slice(0, -tail.length) + ' — ' + name
-    }
-    return current
-  }
-
-  function replaceBrandedCopy(text) {
-    if (typeof text !== 'string' || text === '') return text
-    var next = text
-    for (var i = 0; i < BRANDED_COPY.length; i++) {
-      var pair = BRANDED_COPY[i]
-      if (next.indexOf(pair[0]) !== -1) next = next.split(pair[0]).join(pair[1])
-    }
-    return next
-  }
-
-  function oputeFaviconHref() {
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">'
-      + '<style>@media (prefers-color-scheme: dark) { path { fill: #fff; } }</style>'
-      + '<path d="' + OPUTE_MARK_PATH + '" fill="#000"/>'
-      + '</svg>'
-    return 'data:image/svg+xml,' + encodeURIComponent(svg)
-  }
-
-  function applyOputeFavicon() {
-    var href = oputeFaviconHref()
-    var link = document.querySelector('link[rel="icon"]')
-    if (!link) {
-      link = document.createElement('link')
-      link.rel = 'icon'
-      link.type = 'image/svg+xml'
-      document.head.appendChild(link)
-    }
-    link.type = 'image/svg+xml'
-    link.href = href
-  }
-
-  function rewriteDocumentCopy(root) {
-    if (!root || typeof document.createTreeWalker !== 'function') return
-    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode: function (node) {
-        var parent = node.parentElement
-        if (!parent) return NodeFilter.FILTER_REJECT
-        var tag = parent.tagName
-        if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'INPUT') {
-          return NodeFilter.FILTER_REJECT
-        }
-        if (parent.isContentEditable) return NodeFilter.FILTER_REJECT
-        return NodeFilter.FILTER_ACCEPT
-      },
-    })
-    var node
-    while ((node = walker.nextNode())) {
-      var next = replaceBrandedCopy(node.nodeValue)
-      if (next !== node.nodeValue) node.nodeValue = next
-    }
-  }
-
-  function applyOputeChrome() {
-    if (typeof document === 'undefined') return function () {}
-    applyOputeFavicon()
-    var rewriteTitle = function () {
-      var next = rewriteProductTitle(document.title)
-      if (next !== document.title) document.title = next
-    }
-    rewriteTitle()
-    var obs = new MutationObserver(function () {
-      rewriteTitle()
-      if (document.body) rewriteDocumentCopy(document.body)
-    })
-    var titleEl = document.querySelector('title')
-    if (titleEl) obs.observe(titleEl, { childList: true, characterData: true, subtree: true })
-    if (document.body) {
-      rewriteDocumentCopy(document.body)
-      obs.observe(document.body, { childList: true, characterData: true, subtree: true })
-    } else {
-      document.addEventListener('DOMContentLoaded', function onReady() {
-        document.removeEventListener('DOMContentLoaded', onReady)
-        rewriteDocumentCopy(document.body)
-        obs.observe(document.body, { childList: true, characterData: true, subtree: true })
-      })
-    }
-    return function () { obs.disconnect() }
-  }
-
   function OputeBrandMark(props) {
     var size = (props && props.size) || 24
     return React.createElement(
@@ -1402,9 +1300,6 @@ window.__ModuleLoader__.load({ id: '@opute/dsh-client-ui-opute', factory: (requi
     var workspaces = ctx.get('workspaces')
     var uiWorkspace = new OputeUiWorkspace(ctx, sessions, workspaces)
     watchUnroutableModel(ctx, sessions)
-    ctx.effect(function () {
-      return applyOputeChrome()
-    }, 'ui-opute: product chrome')
     ctx.inject(['uiConversation'], function (scope) {
       scope.uiConversation.events.register(oputeVmInventoryDefinition)
       scope.uiConversation.events.register(oputeAssembleTraceDefinition)
@@ -1420,32 +1315,29 @@ window.__ModuleLoader__.load({ id: '@opute/dsh-client-ui-opute', factory: (requi
       return ctx.slots.inject('sidebar.brand.name', function () {
         return ctx.slots.inject('conversation.hero.brand.mark', function* () {
           yield ctx.slots.register(
-            { name: 'sidebar.brand.mark', priority: OPUTE_BRAND_PRIORITY },
+            { name: 'sidebar.brand.mark' },
             OputeBrandMark,
           )
           yield ctx.slots.register(
-            { name: 'sidebar.brand.name', priority: OPUTE_BRAND_PRIORITY },
+            { name: 'sidebar.brand.name' },
             OputeBrandName,
           )
           yield ctx.slots.register(
-            { name: 'conversation.hero.brand.mark', priority: OPUTE_BRAND_PRIORITY },
+            { name: 'conversation.hero.brand.mark' },
             OputeBrandMark,
           )
         })
       })
     })
 
-    ctx.slots.inject('settings.onboarding', function () {
-      return ctx.slots.register(
-        { name: 'settings.onboarding', id: 'welcome-notice', priority: OPUTE_BRAND_PRIORITY },
-        SkipDshOnboarding,
-      )
-    })
-    ctx.slots.inject('settings.onboarding', function () {
-      return ctx.slots.register(
-        { name: 'settings.onboarding', id: 'deepseek-official', priority: OPUTE_BRAND_PRIORITY },
-        SkipDshOnboarding,
-      )
+    var DSH_ONBOARDING_IDS = ['welcome-notice', 'deepseek-official']
+    ctx.slots.inject('settings.onboarding', function* () {
+      for (var i = 0; i < DSH_ONBOARDING_IDS.length; i++) {
+        yield ctx.slots.register(
+          { name: 'settings.onboarding', id: DSH_ONBOARDING_IDS[i] },
+          SkipDshOnboarding,
+        )
+      }
     })
 
     ctx.slots.inject('sidebar.workspaces', function () {

@@ -41,6 +41,7 @@ const sourcePatch = readFileSync(
   path.join(root, 'packages', 'bundle-opute-web', 'cordis.source.patch.yml'),
   'utf8',
 )
+const dshBuild = readFileSync(path.join(root, 'scripts', 'build-dsh.sh'), 'utf8')
 
 const promptProse = [
   'You are an AI agent powered by DeepSeek Harness',
@@ -56,14 +57,12 @@ for (const [label, text] of [['preset', composition], ['bundle', bundlePatch], [
     process.exit(1)
   }
 }
-for (const [label, text] of [['bundle', bundlePatch], ['source', sourcePatch]]) {
-  if (!text.includes('You are Opute Assistant, helping manage infrastructure nodes and Kubernetes clusters.')) {
-    console.error(`OPUTE_HARNESS_LOCKDOWN_FAIL: ${label} must ship Opute identity as default instructions`)
-    process.exit(1)
-  }
-}
 if (composition.includes("name: '@deepseek-ai/dsh-persona'") || composition.includes('id: persona')) {
   console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: opute preset must not mount a complete dsh-persona (settings plugin owns instructions)')
+  process.exit(1)
+}
+if (!/DSH_CLIENT_TITLE=.*Opute/.test(dshBuild)) {
+  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: DSH build must use the existing Opute document-title option')
   process.exit(1)
 }
 for (const [label, text] of [['bundle', bundlePatch], ['source', sourcePatch]]) {
@@ -86,7 +85,7 @@ if (!bundlePatch.includes('id: directory-picker') || !bundlePatch.includes('disa
   process.exit(1)
 }
 
-for (const id of ['directory-picker', 'ui-workspace', 'file-reference-local', 'ui-deliverables', 'ui-brand-official']) {
+for (const id of ['directory-picker', 'ui-workspace', 'file-reference-local', 'ui-deliverables']) {
   if (!bundlePatch.includes(`id: ${id}`) || !sourcePatch.includes(`id: ${id}`)) {
     console.error(`OPUTE_HARNESS_LOCKDOWN_FAIL: ${id} must be disabled in both patches`)
     process.exit(1)
@@ -143,12 +142,22 @@ if (!uiClient.includes("name: 'sidebar.brand.mark'")
   || !uiClient.includes("name: 'conversation.hero.brand.mark'")
   || !uiClient.includes('data-opute-brand-mark')
   || !uiClient.includes('data-opute-brand-name')
-  || !uiClient.includes('applyOputeChrome')
-  || !uiClient.includes('rewriteProductTitle')
-  || !uiClient.includes('oputeFaviconHref')
-  || !uiClient.includes("id: 'welcome-notice'")
-  || !uiClient.includes("id: 'deepseek-official'")) {
-  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: ui-opute must occupy DSH brand slots, rewrite product chrome, and skip DeepSeek onboarding')
+  || !uiClient.includes('DSH_ONBOARDING_IDS')
+  || !uiClient.includes("'welcome-notice'")
+  || !uiClient.includes("'deepseek-official'")) {
+  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: ui-opute must occupy DSH brand slots and skip DeepSeek onboarding')
+  process.exit(1)
+}
+const removedBrandingWorkarounds = [
+  'applyOputeChrome',
+  'rewriteDocumentCopy',
+  'rewriteProductTitle',
+  'replaceBrandedCopy',
+  'oputeFaviconHref',
+]
+const staleWorkarounds = removedBrandingWorkarounds.filter((fragment) => uiClient.includes(fragment))
+if (staleWorkarounds.length > 0) {
+  console.error(`OPUTE_HARNESS_LOCKDOWN_FAIL: removed branding workarounds are present: ${staleWorkarounds.join(', ')}`)
   process.exit(1)
 }
 
