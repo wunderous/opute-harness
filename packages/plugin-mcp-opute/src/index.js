@@ -9,6 +9,12 @@ export { publicToolName } from './public-name.js'
 export { oputeMcpJsonRpc, normalizeOputeMcpUrl } from './protocol.js'
 export { toolNamePrefix } from './tool-prefix.js'
 
+// A successful empty response is as unusable for the public profile as a failed tools/list.
+export function assertRequiredMcpCatalog(registered, endpoint) {
+  if (registered?.count > 0) return
+  throw new Error(`OPUTE_HARNESS_REQUIRE_MCP=1 requires a non-empty MCP catalog from ${endpoint}`)
+}
+
 function resolveToken() {
   return process.env.OPUTE_MCP_TOKEN
     || process.env.MCP_AUTH_TOKEN
@@ -44,6 +50,7 @@ export async function apply(ctx) {
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
       const registered = await registerOputeMcpTools(ctx, context)
+      if (required) assertRequiredMcpCatalog(registered, endpoint)
       disposers = registered.disposers
       const omittedNote = registered.omitted ? ` (omitted ${registered.omitted} CLI/host-only)` : ''
       const skippedNote = registered.skipped ? ` (skipped ${registered.skipped})` : ''

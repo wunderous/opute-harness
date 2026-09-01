@@ -15,7 +15,7 @@ Required env:
 - `OPUTE_MCP_TOKEN` (or `MCP_AUTH_TOKEN` / `OPUTE_CPC_TOKEN`)
 
 Set `OPUTE_HARNESS_REQUIRE_MCP=1` to fail plugin activation when the list
-fails or the token is missing.
+fails, returns no registerable tools, or the token is missing.
 
 ## Host Agent kernels
 

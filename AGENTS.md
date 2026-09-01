@@ -11,6 +11,9 @@ fork of upstream DSH and not a lift of `platform.opute.io/chat`.
   inventory cards, implicit workspace seed (no folder picker), and the
   `tunnel-recipe.v1` DAG for `https://harness.opute.io`
   ([`recipes/harness-opute-io.yaml`](recipes/harness-opute-io.yaml)).
+- The public profile fails closed until product MCP `tools/list` returns at
+  least one registerable tool; an unavailable or empty catalog is not a usable
+  degraded mode (`OPUTE_HARNESS_REQUIRE_MCP=1`).
 - **Do not** bind `dsh web --host 0.0.0.0` (DSH rejects it; it would expose RCE).
   Cloudflare Tunnel must reach `127.0.0.1:3080`.
 

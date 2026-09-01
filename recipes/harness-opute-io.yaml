@@ -74,7 +74,7 @@ inputs:
     default: opute-harness-cloudflared.service
     schema: {type: string, pattern: '^[A-Za-z0-9_.@:-]+$'}
   recipeRevision:
-    default: 2.0.3
+    default: 2.0.4
     schema: {type: string, pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'}
   serviceArtifactPath:
     default: '%h/.local/share/opute/providers/com.opute.cloudflare/bin/cloudflared'
@@ -125,6 +125,10 @@ plan:
             Environment=DSH_ROOT=${vars.inputs.dshRoot}
             Environment=PATH=${vars.inputs.pathPrefix}:/usr/bin:/bin
             EnvironmentFile=-%h/.config/opute/harness-opute-dsh.env
+            # The public Opute profile must not serve a session with an empty
+            # MCP catalog when the tunnel is still coming up. Let systemd
+            # retry the whole profile until tools/list succeeds.
+            Environment=OPUTE_HARNESS_REQUIRE_MCP=1
             ExecStart=${vars.inputs.nodePath} ${vars.inputs.harnessRoot}/scripts/launch-opute-web.js
             Restart=always
             RestartSec=3

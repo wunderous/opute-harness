@@ -209,6 +209,11 @@ if (!launch.includes('hydrateHarnessMcpEnv') || !launch.includes('preferPublicMc
   console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: launch must hydrate MCP from Host Agent env and fail over from dead :9091')
   process.exit(1)
 }
+const publicRecipe = readFileSync(path.join(root, 'recipes', 'harness-opute-io.yaml'), 'utf8')
+if (!publicRecipe.includes('Environment=OPUTE_HARNESS_REQUIRE_MCP=1')) {
+  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: public harness must fail closed until tools/list succeeds')
+  process.exit(1)
+}
 if (!sourcePatch.includes('plugin-mcp-opute/src/index.js') && !sourcePatch.includes('@opute/dsh-plugin-mcp-opute')) {
   console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: source patch must load plugin-mcp-opute')
   process.exit(1)
