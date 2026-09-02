@@ -42,12 +42,19 @@ const tunnel = readFileSync(
   path.join(oputeRoot, 'deploy', 'helm', 'opute-cell', 'cloudflare-tunnel-platform-opute-io.example.yaml'),
   'utf8',
 )
-if (!tunnel.includes('harness.opute.io') || !tunnel.includes('127.0.0.1:3080')) {
-  console.error('tunnel example must route harness.opute.io to 127.0.0.1:3080')
+if (tunnel.includes('harness.opute.io') || tunnel.includes('127.0.0.1:3080')) {
+  console.error('platform tunnel example must not claim the host-local Harness DSH target')
   process.exit(1)
 }
 
-console.log('OPUTE_HARNESS_COEXISTENCE_PASS router=/chat helm=harness.opute.io tunnel=:3080')
+const harnessRecipe = readFileSync(path.join(root, 'recipes', 'harness-opute-io.yaml'), 'utf8')
+if (!harnessRecipe.includes('hostname:\n    default: harness.opute.io')
+  || !harnessRecipe.includes('localTarget:\n    default: http://127.0.0.1:3080')) {
+  console.error('Harness recipe must own harness.opute.io to 127.0.0.1:3080')
+  process.exit(1)
+}
+
+console.log('OPUTE_HARNESS_COEXISTENCE_PASS router=/chat helm=harness.opute.io dedicated-recipe=:3080')
 
 if (process.env.OPUTE_HARNESS_SKIP_PUBLIC_CURL === '1') {
   process.exit(0)

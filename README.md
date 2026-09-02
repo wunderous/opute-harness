@@ -33,6 +33,10 @@ web-shell inputs until a thin web-surface fork owns them.
 
 Public hosting is Cloudflare Tunnel → `127.0.0.1:3080` with
 `--trusted-host harness.opute.io`. See [deploy/README.md](deploy/README.md).
+The managed public recipe configures DSH with `publicUrl: https://harness.opute.io/`,
+so `dsh web` prints the tokenized browser URL for that authority. Open the
+printed URL; do not manually construct a token URL. The bare public root
+continues to return 401 until that process-launch cookie is established.
 
 ## CI test contract
 

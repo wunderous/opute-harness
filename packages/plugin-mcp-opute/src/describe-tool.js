@@ -18,7 +18,7 @@ const DESCRIPTIONS = {
     examples: ['list all vms on host', 'list the live vms on this host'],
   },
   list_agents: {
-    purpose: 'List connected host agents and heartbeat status. Returns host connectivity (id, name, type, status), not VM names.',
+    purpose: 'List connected host agents and heartbeat status using the exact model-facing tool name mcp__opute__aggregator__list_agents. Returns host connectivity (id, name, type, status), not VM names.',
     whenNotToUse: 'Do not use for VM, cluster, or database inventory. "list the vms" is mcp__opute__platform__list_managed_vms with {}.',
     examples: ['list host agents', 'which hosts are connected'],
   },

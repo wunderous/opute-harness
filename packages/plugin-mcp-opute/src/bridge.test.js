@@ -98,21 +98,61 @@ test('registers mcp__opute__* names on the DSH tool runtime', async () => {
           { name: 'lxc_list', description: 'List LXC', inputSchema: { type: 'object' } },
           { name: 'incus__lxc_list', description: 'List Incus', inputSchema: { type: 'object' } },
           { name: 'diagnose_bridge', description: 'Diagnose', inputSchema: { type: 'object' } },
+          { name: 'aggregator__list_agents', description: 'Host agents', inputSchema: { type: 'object' } },
           { name: 'host__list_vms', description: 'Live VMs', inputSchema: { type: 'object' } },
           { name: 'platform__list_managed_vms', description: 'Managed VMs', inputSchema: { type: 'object' } },
         ],
       })
     },
   })
-  assert.equal(count, 2)
+  assert.equal(count, 3)
   assert.equal(omitted, 3)
   assert.deepEqual(registered.map((definition) => definition.name), [
+    'mcp__opute__aggregator__list_agents',
     'mcp__opute__host__list_vms',
     'mcp__opute__platform__list_managed_vms',
   ])
+  const agents = registered.find((definition) => definition.name === 'mcp__opute__aggregator__list_agents')
+  assert.match(agents.description, /Call the exact tool name mcp__opute__aggregator__list_agents/)
+  assert.match(agents.description, /using the exact model-facing tool name mcp__opute__aggregator__list_agents/)
   const managed = registered.find((definition) => definition.name === 'mcp__opute__platform__list_managed_vms')
   assert.match(managed.description, /list the vms/)
   assert.match(managed.description, /Call with \{\}/)
+})
+
+test('projects undeclared arguments from strict MCP object schemas', async () => {
+  const calls = []
+  const registered = []
+  const ctx = {
+    logger: { warn() {}, info() {}, error() {} },
+    tools: {
+      register(definition) {
+        registered.push(definition)
+        return () => {}
+      },
+    },
+  }
+  await registerOputeMcpTools(ctx, {
+    mcpUrl: 'http://127.0.0.1:9/mcp',
+    async fetch(_url, init) {
+      const body = JSON.parse(init.body)
+      calls.push(body)
+      if (body.method === 'tools/list') {
+        return jsonResponse({
+          tools: [{
+            name: 'platform__list_managed_vms',
+            description: 'Managed VMs',
+            inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+          }],
+        })
+      }
+      return jsonResponse({ content: [{ type: 'text', text: '{"vms":[]}' }] })
+    },
+  })
+
+  await registered[0].execute({ hostId: null, ignored: true })
+  const toolCall = calls.find((call) => call.method === 'tools/call')
+  assert.deepEqual(toolCall.params.arguments, {})
 })
 
 test('prefetches MCP App HTML into presentationMeta, not execute content', async () => {

@@ -1,6 +1,6 @@
 contractVersion: tunnel-recipe.v1
 recipeId: com.opute.harness.opute-io
-recipeVersion: 2.0.0
+recipeVersion: 2.1.15
 provider:
   id: com.opute.cloudflare
   capabilities: [tunneling]
@@ -18,6 +18,9 @@ inputs:
   hostname:
     default: harness.opute.io
     schema: {type: string, minLength: 1, maxLength: 253}
+  publicUrl:
+    default: https://harness.opute.io/
+    schema: {type: string, format: uri}
   localTarget:
     default: http://127.0.0.1:3080
     schema: {type: string, format: uri}
@@ -26,6 +29,9 @@ inputs:
     schema: {type: string, minLength: 1, maxLength: 253}
   mcpEndpoint:
     default: https://mcp.opute.io/mcp
+    schema: {type: string, format: uri}
+  hostAgentEndpoint:
+    default: http://127.0.0.1:3004/mcp
     schema: {type: string, format: uri}
   mcpToken:
     required: true
@@ -38,13 +44,19 @@ inputs:
     default: /home/houman/github/wunderous/deepseek-harness
     schema: {type: string, minLength: 1}
   nodePath:
-    default: /home/houman/.bun/bin/bun
+    # DSH's source web composition is supported by the maintained Node runtime.
+    # Bun is still used for Opute control-plane scripts, but launching DSH
+    # through Bun loses activation errors during the plugin-tree bootstrap.
+    default: /usr/bin/node
     schema: {type: string, minLength: 1}
   pathPrefix:
     default: /home/houman/.bun/bin:/home/houman/.local/bin
     schema: {type: string, minLength: 1}
   dshEnvFile:
     default: ~/.config/opute/harness-opute-dsh.env
+    schema: {type: string, minLength: 1}
+  launchTokenFile:
+    default: ~/.config/opute/harness-opute-dsh.launch-token
     schema: {type: string, minLength: 1}
   dshServiceFile:
     default: ~/.config/systemd/user/opute-harness-dsh.service
@@ -74,7 +86,7 @@ inputs:
     default: opute-harness-cloudflared.service
     schema: {type: string, pattern: '^[A-Za-z0-9_.@:-]+$'}
   recipeRevision:
-    default: 2.0.4
+    default: 2.1.15
     schema: {type: string, pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'}
   serviceArtifactPath:
     default: '%h/.local/share/opute/providers/com.opute.cloudflare/bin/cloudflared'
@@ -101,11 +113,16 @@ plan:
           content: |
             OPUTE_MCP_ENDPOINT=${vars.inputs.mcpEndpoint}
             OPUTE_MCP_TOKEN=${vars.inputs.mcpToken}
+            OPUTE_HARNESS_PUBLIC_URL=${vars.inputs.publicUrl}
       validate:
         tool: inspect_host_file
         args:
           path: "${vars.inputs.dshEnvFile}"
-        assert: [{path: /exists, op: eq, value: true}]
+          expectedContent: |
+            OPUTE_MCP_ENDPOINT=${vars.inputs.mcpEndpoint}
+            OPUTE_MCP_TOKEN=${vars.inputs.mcpToken}
+            OPUTE_HARNESS_PUBLIC_URL=${vars.inputs.publicUrl}
+        assert: [{path: /exists, op: eq, value: true}, {path: /matches, op: eq, value: true}]
     - id: dsh-unit
       dependsOn: [dsh-env]
       action:
@@ -125,6 +142,7 @@ plan:
             Environment=DSH_ROOT=${vars.inputs.dshRoot}
             Environment=PATH=${vars.inputs.pathPrefix}:/usr/bin:/bin
             EnvironmentFile=-%h/.config/opute/harness-opute-dsh.env
+            Environment=OPUTE_HARNESS_LAUNCH_TOKEN_FILE=${vars.inputs.launchTokenFile}
             # The public Opute profile must not serve a session with an empty
             # MCP catalog when the tunnel is still coming up. Let systemd
             # retry the whole profile until tools/list succeeds.
@@ -139,7 +157,30 @@ plan:
         tool: inspect_host_file
         args:
           path: "${vars.inputs.dshServiceFile}"
-        assert: [{path: /exists, op: eq, value: true}]
+          expectedContent: |
+            [Unit]
+            Description=Opute harness.opute.io DSH opute-web
+            After=network-online.target
+
+            [Service]
+            Type=simple
+            WorkingDirectory=${vars.inputs.harnessRoot}
+            Environment=HOME=%h
+            Environment=DSH_ROOT=${vars.inputs.dshRoot}
+            Environment=PATH=${vars.inputs.pathPrefix}:/usr/bin:/bin
+            EnvironmentFile=-%h/.config/opute/harness-opute-dsh.env
+            Environment=OPUTE_HARNESS_LAUNCH_TOKEN_FILE=${vars.inputs.launchTokenFile}
+            # The public Opute profile must not serve a session with an empty
+            # MCP catalog when the tunnel is still coming up. Let systemd
+            # retry the whole profile until tools/list succeeds.
+            Environment=OPUTE_HARNESS_REQUIRE_MCP=1
+            ExecStart=${vars.inputs.nodePath} ${vars.inputs.harnessRoot}/scripts/launch-opute-web.js
+            Restart=always
+            RestartSec=3
+
+            [Install]
+            WantedBy=default.target
+        assert: [{path: /exists, op: eq, value: true}, {path: /matches, op: eq, value: true}]
     - id: dsh-supervisor
       dependsOn: [dsh-unit]
       action:
@@ -159,7 +200,10 @@ plan:
         args: {uri: "host-service:${vars.tenantId}:user/${vars.inputs.dshServiceName}", scope: user}
         assert: [{path: /enabled, op: eq, value: true}]
     - id: dsh-restart
-      dependsOn: [dsh-enable]
+      # Keep the configuration producer as an explicit dependency. A changed
+      # public URL or MCP credential must restart DSH even when the
+      # intermediate supervisor/enable observations are still satisfied.
+      dependsOn: [dsh-enable, dsh-env]
       action:
         tool: set_host_service_state
         args: {uri: "host-service:${vars.tenantId}:user/${vars.inputs.dshServiceName}", state: restart, scope: user}

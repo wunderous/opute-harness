@@ -13,6 +13,14 @@ function isRecord(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+function projectArgumentsToSchema(args, schema) {
+  if (!isRecord(args) || !isRecord(schema) || schema.type !== 'object' || schema.additionalProperties !== false) {
+    return args
+  }
+  const properties = isRecord(schema.properties) ? new Set(Object.keys(schema.properties)) : new Set()
+  return Object.fromEntries(Object.entries(args).filter(([key]) => properties.has(key)))
+}
+
 function isWorkingTask(value) {
   if (!isRecord(value)) return false
   if (typeof value.taskId !== 'string') return false
@@ -220,7 +228,12 @@ function createDefinition(context, tool, appResource, options = {}) {
   const parameters = isRecord(tool.inputSchema) ? tool.inputSchema : { type: 'object', properties: {} }
   return {
     name: publicName,
-    description: describeCatalogTool(describeName, typeof tool.description === 'string' ? tool.description : ''),
+    // Keep the schema name and description tied together. Small/open models
+    // sometimes substitute a remembered namespace for an MCP tool name when
+    // the description only explains the operation. Stating the emitted name
+    // makes the public contract self-describing without registering retired
+    // aliases or silently rewriting model calls.
+    description: `Call the exact tool name ${publicName}. ${describeCatalogTool(describeName, typeof tool.description === 'string' ? tool.description : '')}`,
     parameters,
     timeoutMs: DEFAULT_TOOL_TIMEOUT_MS,
     output: {
@@ -245,7 +258,12 @@ function createDefinition(context, tool, appResource, options = {}) {
     },
     async execute(args, exec) {
       const argsObj = typeof args === 'object' && args !== null ? args : {}
-      const result = await callOputeMcpTool(context, rawName, argsObj, exec?.signal)
+      const result = await callOputeMcpTool(
+        context,
+        rawName,
+        projectArgumentsToSchema(argsObj, parameters),
+        exec?.signal,
+      )
       if (result?.isError === true) {
         throw new Error(extractText(result.content, rawName))
       }

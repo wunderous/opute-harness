@@ -214,6 +214,30 @@ if (!publicRecipe.includes('Environment=OPUTE_HARNESS_REQUIRE_MCP=1')) {
   console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: public harness must fail closed until tools/list succeeds')
   process.exit(1)
 }
+const recipeVersion = publicRecipe.match(/^recipeVersion:\s*([^\s#]+)/m)?.[1]
+const recipeRevision = publicRecipe.match(/recipeRevision:\s*\n\s+default:\s*([^\s#]+)\s*$/m)?.[1]
+if (!recipeVersion || recipeRevision !== recipeVersion
+  || !publicRecipe.includes('publicUrl:')
+  || !publicRecipe.includes('OPUTE_HARNESS_PUBLIC_URL=${vars.inputs.publicUrl}')) {
+  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: public harness must publish DSH auth through the configured public origin')
+  process.exit(1)
+}
+if (!publicRecipe.includes('default: /usr/bin/node')) {
+  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: public harness must launch source DSH with Node')
+  process.exit(1)
+}
+const managedApply = readFileSync(path.join(path.resolve(root, '..', 'opute'), 'scripts', 'apply-harness-web-recipe-via-mcp.ts'), 'utf8')
+if (!publicRecipe.includes('hostAgentEndpoint:')
+  || !managedApply.includes('OPUTE_HOST_AGENT_ENDPOINT=${hostAgentEndpoint}')
+  || !managedApply.includes('OPUTE_HOST_AGENT_BEARER_TOKEN=${selectedHostAgentToken}')) {
+  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: managed Cloudflare provider callbacks must use the canonical Host Agent endpoint and bearer')
+  process.exit(1)
+}
+if (!bundlePatch.includes('publicUrl: !!js process.env.OPUTE_HARNESS_PUBLIC_URL || undefined')
+  || !sourcePatch.includes('publicUrl: !!js process.env.OPUTE_HARNESS_PUBLIC_URL || undefined')) {
+  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: both web-runtime patches must pass the configured public origin to DSH')
+  process.exit(1)
+}
 if (!sourcePatch.includes('plugin-mcp-opute/src/index.js') && !sourcePatch.includes('@opute/dsh-plugin-mcp-opute')) {
   console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: source patch must load plugin-mcp-opute')
   process.exit(1)
