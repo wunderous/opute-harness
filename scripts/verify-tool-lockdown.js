@@ -234,8 +234,10 @@ if (!publicRecipe.includes('hostAgentEndpoint:')
   process.exit(1)
 }
 if (!bundlePatch.includes('publicUrl: !!js process.env.OPUTE_HARNESS_PUBLIC_URL || undefined')
-  || !sourcePatch.includes('publicUrl: !!js process.env.OPUTE_HARNESS_PUBLIC_URL || undefined')) {
-  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: both web-runtime patches must pass the configured public origin to DSH')
+  || !sourcePatch.includes('publicUrl: !!js process.env.OPUTE_HARNESS_PUBLIC_URL || undefined')
+  || !bundlePatch.includes('hostedPublicAccess: true')
+  || !sourcePatch.includes('hostedPublicAccess: true')) {
+  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: both web-runtime patches must pass the configured public origin and explicit hosted entry policy to DSH')
   process.exit(1)
 }
 if (!sourcePatch.includes('plugin-mcp-opute/src/index.js') && !sourcePatch.includes('@opute/dsh-plugin-mcp-opute')) {

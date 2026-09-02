@@ -56,12 +56,14 @@ then apply [`recipes/harness-opute-io.yaml`](recipes/harness-opute-io.yaml)
 (`tunnel-recipe.v1` / `host-plan.v1`). Apply installs DSH as a user systemd
 unit and a dedicated WSL connector for `harness.opute.io` → `127.0.0.1:3080`.
 Do not add this hostname to the in-cluster platform/mcp tunnel. Recipes probe
-`/favicon.svg` because DSH `/` is 401 without the process-launch cookie.
-The public recipe sets DSH's `publicUrl` to `https://harness.opute.io/`, so
-the URL printed by `dsh web` is already the browser-facing, tokenized URL.
-Open that printed URL; do not construct or append a token manually. The
-launch-token file is retained for the managed launcher, not as a second
-authentication flow.
+`/favicon.svg` because DSH `/` is a protected 401 entry page without the
+browser-session cookie. On the dedicated public recipe, that page offers an
+explicit **Open Harness** action; the browser submits it to the same-origin
+hosted-entry route and receives an HttpOnly session cookie. No local terminal,
+running user `dsh web`, or copied launch URL is required. The recipe enables
+this public entry only for `harness.opute.io`; ordinary local DSH sessions
+retain the process-token URL flow. The launch-token file is retained for the
+managed launcher, not as a second public authentication flow.
 
 `pnpm start` runs `dsh web --patch packages/bundle-opute-web/cordis.patch.yml`
 from the sibling `../deepseek-harness` checkout (the `web` profile includes

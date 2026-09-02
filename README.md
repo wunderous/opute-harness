@@ -29,14 +29,17 @@ web-shell inputs until a thin web-surface fork owns them.
    ```
 
    The GUI listens on `http://127.0.0.1:3080`. Open the printed `dsh web:` URL
-   (it carries a process token). Do not pass `--host 0.0.0.0`.
+   (it carries a process token) when testing locally. Do not pass
+   `--host 0.0.0.0`.
 
 Public hosting is Cloudflare Tunnel → `127.0.0.1:3080` with
 `--trusted-host harness.opute.io`. See [deploy/README.md](deploy/README.md).
-The managed public recipe configures DSH with `publicUrl: https://harness.opute.io/`,
-so `dsh web` prints the tokenized browser URL for that authority. Open the
-printed URL; do not manually construct a token URL. The bare public root
-continues to return 401 until that process-launch cookie is established.
+The managed public recipe configures DSH with
+`publicUrl: https://harness.opute.io/` and explicitly enables hosted public
+entry for that dedicated authority. A fresh browser can open the bare public
+root, choose **Open Harness**, and land on the clean authenticated GUI. The
+process-token URL remains a local/operator diagnostic and is never required
+for public access.
 
 ## CI test contract
 

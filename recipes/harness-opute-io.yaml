@@ -1,6 +1,6 @@
 contractVersion: tunnel-recipe.v1
 recipeId: com.opute.harness.opute-io
-recipeVersion: 2.1.15
+recipeVersion: 2.1.18
 provider:
   id: com.opute.cloudflare
   capabilities: [tunneling]
@@ -86,7 +86,7 @@ inputs:
     default: opute-harness-cloudflared.service
     schema: {type: string, pattern: '^[A-Za-z0-9_.@:-]+$'}
   recipeRevision:
-    default: 2.1.15
+    default: 2.1.18
     schema: {type: string, pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'}
   serviceArtifactPath:
     default: '%h/.local/share/opute/providers/com.opute.cloudflare/bin/cloudflared'

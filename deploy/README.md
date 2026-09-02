@@ -26,9 +26,11 @@ then apply [`recipes/harness-opute-io.yaml`](../recipes/harness-opute-io.yaml)
 TypeScript. DSH owns conversation location `key`; overlay still sets
 `key === kind` for older DSH.
 
-DSH `/` is 401 without the process-launch cookie, so the recipe probes
-`/favicon.svg` (200). Public sessions still need
-`https://harness.opute.io/?token=<process-launch-token>`.
+DSH `/` is a protected 401 entry page without the browser-session cookie, so
+the recipe probes `/favicon.svg` (200). At the dedicated public hostname the
+page provides an **Open Harness** button that performs the same-origin hosted
+entry action; users do not need local terminal access or a copied `dsh web`
+URL. Ordinary local DSH sessions still use the process-token URL.
 
 Put Cloudflare Access (or equivalent) in front of the Host API. DSH still uses
 its process-launch cookie internally.

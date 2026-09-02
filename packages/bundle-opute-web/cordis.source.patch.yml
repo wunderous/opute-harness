@@ -21,6 +21,7 @@
     surfaceContext: false
     trustedHosts: !!js ctx.webStartup.trustedHosts
     publicUrl: !!js process.env.OPUTE_HARNESS_PUBLIC_URL || undefined
+    hostedPublicAccess: true
 
 - id: agent-presets
   name: '@deepseek-ai/dsh-agent-presets'
