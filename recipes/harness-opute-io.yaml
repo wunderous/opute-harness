@@ -1,6 +1,6 @@
 contractVersion: tunnel-recipe.v1
 recipeId: com.opute.harness.opute-io
-recipeVersion: 2.1.18
+recipeVersion: 2.1.19
 provider:
   id: com.opute.cloudflare
   capabilities: [tunneling]
@@ -86,13 +86,13 @@ inputs:
     default: opute-harness-cloudflared.service
     schema: {type: string, pattern: '^[A-Za-z0-9_.@:-]+$'}
   recipeRevision:
-    default: 2.1.18
+    default: 2.1.19
     schema: {type: string, pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'}
   serviceArtifactPath:
     default: '%h/.local/share/opute/providers/com.opute.cloudflare/bin/cloudflared'
     schema: {type: string, minLength: 1}
 compatibility:
-  requiredTools: [ensure_host_artifact, ensure_host_file, ensure_host_service_supervisor, set_host_service_state, inspect_host_service, inspect_host_file, probe_http_endpoint, opute.capability.tunneling.ensure-host-tunnel]
+  requiredTools: [ensure_host_artifact, ensure_host_file, ensure_host_service_supervisor, set_host_service_state, inspect_host_service, inspect_host_file, probe_http_endpoint, opute.capability.tunneling.ensure-host-tunnel, opute.capability.tunneling.probe-host-tunnel]
 activation:
   capability: tunneling
   servingContract: http-exposure.v1
@@ -254,6 +254,32 @@ plan:
         args:
           path: "${vars.inputs.tokenFile}"
         assert: [{path: /exists, op: eq, value: true}]
+    # The token file, the local listener and a connected cloudflared all stay
+    # healthy when another binding rewrites this tunnel's ingress, so none of
+    # them notices the route going away. This asserts the route itself, and it
+    # asserts configuration rather than serving so it holds immediately after
+    # publication and before the connector reconnects.
+    - id: verify-route
+      dependsOn: [ensure-tunnel]
+      action:
+        tool: opute.capability.tunneling.probe-host-tunnel
+        args:
+          bindingId: dsh-opute-web
+          hostname: "${vars.inputs.hostname}"
+          localTarget: "${vars.inputs.localTarget}"
+          tunnelName: "${vars.inputs.tunnelName}"
+          tokenFile: "${vars.inputs.tokenFile}"
+      validate:
+        tool: opute.capability.tunneling.probe-host-tunnel
+        args:
+          bindingId: dsh-opute-web
+          hostname: "${vars.inputs.hostname}"
+          localTarget: "${vars.inputs.localTarget}"
+          tunnelName: "${vars.inputs.tunnelName}"
+          tokenFile: "${vars.inputs.tokenFile}"
+        timeoutMs: 60000
+        pollIntervalMs: 3000
+        assert: [{path: /routed, op: eq, value: true}]
     - id: token-file
       dependsOn: [ensure-tunnel]
       action:
@@ -324,7 +350,7 @@ plan:
         pollIntervalMs: 2000
         assert: [{path: /active, op: eq, value: true}]
     - id: endpoint
-      dependsOn: [restart]
+      dependsOn: [restart, verify-route]
       action:
         tool: probe_http_endpoint
         args: {endpoint: "${vars.inputs.endpoint}"}
