@@ -1,4 +1,4 @@
-# The in-cluster public Harness deployment.  Granite 4.1 is requested from
+# The in-cluster public Harness deployment.  Granite 4.2 is requested from
 # OpenRouter through the secret-backed API key; no local model proxy is part of
 # this workload.  DSH remains pod-local; Cloudflare is the only public path.
 apiVersion: v1

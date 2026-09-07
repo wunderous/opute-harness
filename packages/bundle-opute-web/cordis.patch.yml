@@ -77,7 +77,7 @@
 - id: plugin-package-inventory-deepseek
   disabled: true
 
-# OpenRouter is the only Granite 4.1 acceptance route. Ollama remains
+# OpenRouter is the only Granite 4.2 acceptance route. Ollama remains
 # available for unrelated local development models; the e2e gate must never
 # select a local Granite model.
 - id: llm-pi-ai

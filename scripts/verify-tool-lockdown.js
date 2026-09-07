@@ -42,7 +42,7 @@ const sourcePatch = readFileSync(
   'utf8',
 )
 const graniteAcceptance = readFileSync(
-  path.join(root, 'scripts', 'validate-public-granite41.mjs'),
+  path.join(root, 'scripts', 'validate-public-granite42.mjs'),
   'utf8',
 )
 const k8sValidation = readFileSync(
@@ -50,9 +50,9 @@ const k8sValidation = readFileSync(
   'utf8',
 )
 if (!graniteAcceptance.includes("const provider = 'openrouter'")
-  || !graniteAcceptance.includes("const model = 'ibm-granite/granite-4.1-8b'")
+  || !graniteAcceptance.includes("const model = 'ibm-granite/granite-4.2-8b'")
   || graniteAcceptance.includes("const provider = 'ollama'")) {
-  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: Granite 4.1 acceptance must select OpenRouter')
+  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: Granite 4.2 acceptance must select OpenRouter')
   process.exit(1)
 }
 if (!k8sValidation.includes('OPENROUTER_API_KEY')

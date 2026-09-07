@@ -93,7 +93,7 @@ try {
     podNodes,
     tunnel: 'cloudflared-sidecar',
     modelProvider: 'openrouter',
-    model: 'ibm-granite/granite-4.1-8b',
+    model: 'ibm-granite/granite-4.2-8b',
   }, null, 2))
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error))

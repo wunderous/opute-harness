@@ -46,7 +46,7 @@ for public access.
 The committed test suite is deterministic: it does not call an LLM, Ollama,
 OpenRouter, or any other provider, so GitHub Actions does not need an AI secret.
 Provider-backed model behavior belongs in a separate opt-in lane; when one is
-added, use the exact OpenRouter `ibm-granite/granite-4.1-8b` route rather than
+added, use the exact OpenRouter `ibm-granite/granite-4.2-8b` route rather than
 a local model. If OpenRouter does not advertise that model, the lane must
 remain blocked.
 

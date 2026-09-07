@@ -39,7 +39,7 @@ its process-launch cookie internally.
 
 The supported two-node validation deployment is
 [`k8s/harness-dsh.yaml`](k8s/harness-dsh.yaml). It runs the maintained DSH
-image and a pinned Cloudflare connector in one pod. Granite 4.1 is requested
+image and a pinned Cloudflare connector in one pod. Granite 4.2 is requested
 from OpenRouter through a Kubernetes Secret; there is no node-local model
 proxy or Ollama dependency. DSH still binds only to the pod loopback; the
 connector's existing ingress remains `harness.opute.io` to
@@ -65,7 +65,7 @@ The token values are intentionally absent from the repository. Run
 `pnpm validate:k8s-harness` with the target K3s `kubectl` context to require
 two Ready nodes, a Ready Harness pod, the public MCP endpoint, a
 Secret-backed OpenRouter key, and the Cloudflare sidecar. Follow that with
-`pnpm validate:public-granite41` for the external exact-model acceptance;
-the acceptance probe selects `openrouter/ibm-granite/granite-4.1-8b` and
+`pnpm validate:public-granite42` for the external exact-model acceptance;
+the acceptance probe selects `openrouter/ibm-granite/granite-4.2-8b` and
 blocks when OpenRouter does not advertise that exact model. HTTP health alone
 is not an end-to-end pass.

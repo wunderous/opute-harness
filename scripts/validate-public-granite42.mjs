@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Public, read-only acceptance for the exact IBM Granite 4.1 8B route.
+ * Public, read-only acceptance for the exact IBM Granite 4.2 8B route.
  *
  * The probe uses the hosted Harness entry point, selects the OpenRouter route,
  * asks for one inventory read, and records the correlated model/tool/session
@@ -22,10 +22,10 @@ const { default: WebSocket } = await import(pathToFileURL(wsPath).href)
 const originRaw = process.env.HARNESS_URL || 'https://harness.opute.io'
 const origin = originRaw.endsWith('/') ? originRaw.slice(0, -1) : originRaw
 const provider = 'openrouter'
-const model = 'ibm-granite/granite-4.1-8b'
+const model = 'ibm-granite/granite-4.2-8b'
 const expectedTool = 'platform__list_managed_vms'
 const prompt = 'Call the exact tool mcp__opute__platform__list_managed_vms once with the empty JSON object {}. Do not answer until that tool returns. Then report each returned VM name, status, and owning host; use only returned tool data and say when a field is unavailable.'
-const requestedSessionId = `granite41-validation-${randomUUID()}`
+const requestedSessionId = `granite42-validation-${randomUUID()}`
 const state = {
   accepted: false,
   sessionId: requestedSessionId,
@@ -269,7 +269,7 @@ async function rpc(method, args) {
 function follow(sessionId) {
   return new Promise((resolve, reject) => {
     const socket = new WebSocket(`${origin.replace(/^http/u, 'ws')}/api/remote.mux`, { headers: { cookie } })
-    const streamId = `granite41-follow-${randomUUID()}`
+    const streamId = `granite42-follow-${randomUUID()}`
     let settled = false
     let turnFinished = false
     let finishTimer
@@ -406,8 +406,14 @@ async function run() {
 run().catch(error => {
   const outDir = path.join(root, '..', 'opute', 'tmp', 'public-harness-granite')
   mkdirSync(outDir, { recursive: true })
-  const failure = { status: 'BLOCKED', error: String(error), selected: { provider, model }, prompt }
+  const failure = {
+    status: 'BLOCKED',
+    error: String(error),
+    selected: { provider, model },
+    catalog: state.catalog,
+    prompt,
+  }
   writeFileSync(path.join(outDir, 'summary.json'), `${JSON.stringify(safe(failure), null, 2)}\n`)
-  console.error(`PUBLIC_GRANITE41_BLOCKED: ${String(error)}`)
+  console.error(`PUBLIC_GRANITE42_BLOCKED: ${String(error)}`)
   process.exitCode = 2
 })
