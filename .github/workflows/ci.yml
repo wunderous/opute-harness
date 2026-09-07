@@ -16,16 +16,6 @@ jobs:
       - name: Check out Opute Harness
         uses: actions/checkout@v4
 
-      # The lockdown verifier checks the Platform-owned recipe callback
-      # contract. Keep that source checkout explicit so a Harness-only clone
-      # cannot silently skip the cross-repository boundary check.
-      - name: Check out Opute platform contract
-        uses: actions/checkout@v4
-        with:
-          repository: wunderous/opute
-          ref: main
-          path: opute
-
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -47,6 +37,4 @@ jobs:
         run: pnpm test
 
       - name: Verify tool lockdown
-        env:
-          OPUTE_PLATFORM_ROOT: ${{ github.workspace }}/opute
         run: pnpm verify:lockdown

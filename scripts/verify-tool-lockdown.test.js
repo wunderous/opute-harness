@@ -13,3 +13,12 @@ test('verify-tool-lockdown exits 0', () => {
   assert.equal(result.status, 0, result.stderr + result.stdout)
   assert.match(result.stdout, /OPUTE_HARNESS_LOCKDOWN_PASS/)
 })
+
+test('explicit Platform root fails closed when unavailable', () => {
+  const result = spawnSync(process.execPath, [path.join(root, 'scripts', 'verify-tool-lockdown.js')], {
+    encoding: 'utf8',
+    env: { ...process.env, OPUTE_PLATFORM_ROOT: path.join(root, 'missing-opute-platform') },
+  })
+  assert.notEqual(result.status, 0)
+  assert.match(result.stderr + result.stdout, /missing Opute platform checkout/)
+})

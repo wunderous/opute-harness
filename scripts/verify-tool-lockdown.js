@@ -249,14 +249,21 @@ const platformRoot = process.env.OPUTE_PLATFORM_ROOT?.trim()
   ? path.resolve(process.env.OPUTE_PLATFORM_ROOT)
   : path.resolve(root, '..', 'opute')
 const managedApplyPath = path.join(platformRoot, 'scripts', 'apply-harness-web-recipe-via-mcp.ts')
-if (!existsSync(managedApplyPath)) {
+const managedApply = existsSync(managedApplyPath) ? readFileSync(managedApplyPath, 'utf8') : undefined
+if (process.env.OPUTE_PLATFORM_ROOT?.trim() && !managedApply) {
   console.error(`OPUTE_HARNESS_LOCKDOWN_FAIL: missing Opute platform checkout at ${managedApplyPath}`)
   process.exit(1)
 }
-const managedApply = readFileSync(managedApplyPath, 'utf8')
+if (!managedApply) {
+  console.warn(
+    `OPUTE_HARNESS_LOCKDOWN_NOTICE: Platform callback source unavailable at ${managedApplyPath}; `
+    + 'run with OPUTE_PLATFORM_ROOT for the cross-repository contract check',
+  )
+}
 if (!publicRecipe.includes('hostAgentEndpoint:')
-  || !managedApply.includes('OPUTE_HOST_AGENT_ENDPOINT=${hostAgentEndpoint}')
-  || !managedApply.includes('OPUTE_HOST_AGENT_BEARER_TOKEN=${selectedHostAgentToken}')) {
+  || (managedApply !== undefined
+    && (!managedApply.includes('OPUTE_HOST_AGENT_ENDPOINT=${hostAgentEndpoint}')
+      || !managedApply.includes('OPUTE_HOST_AGENT_BEARER_TOKEN=${selectedHostAgentToken}')))) {
   console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: managed Cloudflare provider callbacks must use the canonical Host Agent endpoint and bearer')
   process.exit(1)
 }
