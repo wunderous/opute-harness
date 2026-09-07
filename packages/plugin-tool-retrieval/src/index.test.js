@@ -1,9 +1,17 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { textFromUserMessage } from './query.js'
-import { apply } from './index.js'
+import { apply, resolveToolSurfaceLimit } from './index.js'
 import { describeCatalogTool } from '../../plugin-mcp-opute/src/describe-tool.js'
 import { EMBEDDING_RETRIEVAL_ROOT_LIMIT } from './rank.js'
+
+test('resolveToolSurfaceLimit accepts a bounded validation override', () => {
+  assert.equal(resolveToolSurfaceLimit(undefined), EMBEDDING_RETRIEVAL_ROOT_LIMIT)
+  assert.equal(resolveToolSurfaceLimit('1'), 1)
+  assert.throws(() => resolveToolSurfaceLimit('0'), /from 1 to 10/)
+  assert.throws(() => resolveToolSurfaceLimit('11'), /from 1 to 10/)
+  assert.throws(() => resolveToolSurfaceLimit('one'), /from 1 to 10/)
+})
 
 test('textFromUserMessage ignores tool-result turns', () => {
   assert.equal(textFromUserMessage({

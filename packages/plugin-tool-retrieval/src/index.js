@@ -1,6 +1,10 @@
 import { createQueryStore } from './query.js'
 import { registerOputeTraceProjection } from './projection.js'
-import { projectRankedSurfaceDetail, TOOL_SELECTION_RANKING_VERSION } from './rank.js'
+import {
+  EMBEDDING_RETRIEVAL_ROOT_LIMIT,
+  projectRankedSurfaceDetail,
+  TOOL_SELECTION_RANKING_VERSION,
+} from './rank.js'
 import { buildAssembleTrace, EXECUTION_TRACE_EVENT } from './trace.js'
 
 export const name = 'opute-tool-retrieval'
@@ -9,6 +13,22 @@ export const inject = ['systemPrompt']
 export { rankCatalogTools, projectRankedSurface, projectRankedSurfaceDetail, TOOL_SELECTION_RANKING_VERSION } from './rank.js'
 export { buildAssembleTrace, EXECUTION_TRACE_EVENT } from './trace.js'
 export { applyOputeTrace, oputeTraceDefinition, OPUTE_TRACE_KEY } from './projection.js'
+
+/**
+ * Keep the normal ten-tool surface, with a smaller operator-selected bound
+ * for constrained validation models. Values outside the ranked bound fail
+ * closed instead of silently restoring the full catalog.
+ */
+export function resolveToolSurfaceLimit(value = process.env.OPUTE_HARNESS_TOOL_LIMIT) {
+  if (value === undefined || value.trim() === '') return EMBEDDING_RETRIEVAL_ROOT_LIMIT
+  const limit = Number(value)
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > EMBEDDING_RETRIEVAL_ROOT_LIMIT) {
+    throw new Error(
+      `OPUTE_HARNESS_TOOL_LIMIT must be an integer from 1 to ${EMBEDDING_RETRIEVAL_ROOT_LIMIT}`,
+    )
+  }
+  return limit
+}
 
 function emitAssembleTrace(ctx, agent, store, payload) {
   const session = agent?.session
@@ -39,6 +59,7 @@ function emitAssembleTrace(ctx, agent, store, payload) {
  */
 export function apply(ctx) {
   const store = createQueryStore()
+  const surfaceLimit = resolveToolSurfaceLimit()
 
   ctx.on('agent/inbox/claimed', ({ agent, message, turn }) => {
     store.remember(agent, message, turn)
@@ -51,7 +72,7 @@ export function apply(ctx) {
     const query = store.queryFor(agent)
     if (!query) return assembled
     try {
-      const detail = projectRankedSurfaceDetail(assembled.tools, query)
+      const detail = projectRankedSurfaceDetail(assembled.tools, query, { limit: surfaceLimit })
       emitAssembleTrace(ctx, agent, store, {
         query,
         catalogCount: detail.catalogCount,

@@ -13,6 +13,7 @@
     "test": "node --test scripts/*.test.js packages/*/src/*.test.js",
     "verify:lockdown": "node scripts/verify-tool-lockdown.js",
     "verify:coexistence": "node scripts/verify-coexistence.js",
+    "validate:public-granite41": "node scripts/validate-public-granite41.mjs",
     "start": "node scripts/launch-opute-web.js"
   }
 }
