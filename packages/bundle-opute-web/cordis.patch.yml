@@ -77,8 +77,9 @@
 - id: plugin-package-inventory-deepseek
   disabled: true
 
-# OpenRouter is a pi-ai catalog route. Ollama is not; it is a local
-# OpenAI-compatible server and must be declared outright.
+# OpenRouter is the only Granite 4.1 acceptance route. Ollama remains
+# available for unrelated local development models; the e2e gate must never
+# select a local Granite model.
 - id: llm-pi-ai
   config:
     providers:

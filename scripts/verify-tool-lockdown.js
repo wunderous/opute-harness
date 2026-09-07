@@ -41,6 +41,25 @@ const sourcePatch = readFileSync(
   path.join(root, 'packages', 'bundle-opute-web', 'cordis.source.patch.yml'),
   'utf8',
 )
+const graniteAcceptance = readFileSync(
+  path.join(root, 'scripts', 'validate-public-granite41.mjs'),
+  'utf8',
+)
+const k8sValidation = readFileSync(
+  path.join(root, 'scripts', 'validate-k8s-harness.mjs'),
+  'utf8',
+)
+if (!graniteAcceptance.includes("const provider = 'openrouter'")
+  || !graniteAcceptance.includes("const model = 'ibm-granite/granite-4.1-8b'")
+  || graniteAcceptance.includes("const provider = 'ollama'")) {
+  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: Granite 4.1 acceptance must select OpenRouter')
+  process.exit(1)
+}
+if (!k8sValidation.includes('OPENROUTER_API_KEY')
+  || !k8sValidation.includes("item.name === 'OLLAMA_BASE_URL'")) {
+  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: K3s Harness validation must require OpenRouter and reject local Ollama')
+  process.exit(1)
+}
 const dshBuild = readFileSync(path.join(root, 'scripts', 'build-dsh.sh'), 'utf8')
 
 const promptProse = [

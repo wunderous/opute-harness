@@ -39,9 +39,10 @@ its process-launch cookie internally.
 
 The supported two-node validation deployment is
 [`k8s/harness-dsh.yaml`](k8s/harness-dsh.yaml). It runs the maintained DSH
-image and a pinned Cloudflare connector in one `hostNetwork` pod on the node
-that owns the node-local Granite proxy. DSH still binds only to loopback;
-the connector's existing ingress remains `harness.opute.io` to
+image and a pinned Cloudflare connector in one pod. Granite 4.1 is requested
+from OpenRouter through a Kubernetes Secret; there is no node-local model
+proxy or Ollama dependency. DSH still binds only to the pod loopback; the
+connector's existing ingress remains `harness.opute.io` to
 `http://127.0.0.1:3080`.
 
 Build an image from a context containing sibling `opute-harness/` and
@@ -53,6 +54,8 @@ runtime-only Secrets before applying the manifest:
 kubectl create namespace opute-harness
 kubectl create secret generic opute-harness-mcp --namespace opute-harness \
   --from-literal=token="$OPUTE_MCP_TOKEN"
+kubectl create secret generic opute-harness-openrouter --namespace opute-harness \
+  --from-literal=apiKey="$OPENROUTER_API_KEY"
 kubectl create secret generic opute-harness-tunnel --namespace opute-harness \
   --from-file=token="$OPUTE_HARNESS_TUNNEL_TOKEN_FILE"
 kubectl apply -f deploy/k8s/harness-dsh.yaml
@@ -60,7 +63,9 @@ kubectl apply -f deploy/k8s/harness-dsh.yaml
 
 The token values are intentionally absent from the repository. Run
 `pnpm validate:k8s-harness` with the target K3s `kubectl` context to require
-two Ready nodes, a Ready Harness pod, the expected loopback model endpoint,
-Secret-backed credentials, and the Cloudflare sidecar. Follow that with
+two Ready nodes, a Ready Harness pod, the public MCP endpoint, a
+Secret-backed OpenRouter key, and the Cloudflare sidecar. Follow that with
 `pnpm validate:public-granite41` for the external exact-model acceptance;
-HTTP health alone is not an end-to-end pass.
+the acceptance probe selects `openrouter/ibm-granite/granite-4.1-8b` and
+blocks when OpenRouter does not advertise that exact model. HTTP health alone
+is not an end-to-end pass.

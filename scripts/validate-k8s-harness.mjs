@@ -10,7 +10,6 @@ import { spawnSync } from 'node:child_process'
 
 const namespace = process.env.OPUTE_HARNESS_K8S_NAMESPACE || 'opute-harness'
 const deploymentName = process.env.OPUTE_HARNESS_K8S_DEPLOYMENT || 'harness-dsh'
-const expectedNode = process.env.OPUTE_HARNESS_K8S_NODE || 'opute-ha-join-a19'
 const kubectl = process.env.KUBECTL_BIN || 'kubectl'
 
 function kubectlJson(args) {
@@ -59,12 +58,18 @@ try {
   const dsh = containers.find(container => container.name === 'dsh')
   const cloudflared = containers.find(container => container.name === 'cloudflared')
   if (!dsh || !cloudflared) throw new Error('deployment must contain dsh and cloudflared containers')
-  if (template.hostNetwork !== true) throw new Error('deployment must use hostNetwork for the node-local model proxy')
-  if (template.nodeName !== expectedNode) throw new Error(`deployment nodeName ${template.nodeName || '<missing>'} does not match ${expectedNode}`)
+  if (template.hostNetwork === true) throw new Error('deployment must not use hostNetwork for a local model proxy')
   if (envValue(dsh, 'OPUTE_MCP_ENDPOINT') !== 'https://mcp.opute.io/mcp') throw new Error('dsh MCP endpoint is not the public product endpoint')
-  if (envValue(dsh, 'OLLAMA_BASE_URL') !== 'http://127.0.0.1:11435/v1') throw new Error('dsh model endpoint is not the node-local Granite proxy')
   if (!dsh.env?.some(item => item.name === 'OPUTE_MCP_TOKEN' && item.valueFrom?.secretKeyRef?.name === 'opute-harness-mcp')) {
     throw new Error('dsh MCP token must come from the Kubernetes Secret')
+  }
+  if (!dsh.env?.some(item => item.name === 'OPENROUTER_API_KEY'
+    && item.valueFrom?.secretKeyRef?.name === 'opute-harness-openrouter'
+    && item.valueFrom?.secretKeyRef?.key === 'apiKey')) {
+    throw new Error('dsh OpenRouter key must come from the opute-harness-openrouter Kubernetes Secret')
+  }
+  if (dsh.env?.some(item => item.name === 'OLLAMA_BASE_URL')) {
+    throw new Error('dsh must not configure a local Ollama model endpoint')
   }
   if (!cloudflared.args?.includes('/etc/cloudflared/token')) throw new Error('cloudflared must read its token from the Kubernetes Secret volume')
   if (deployment.status?.availableReplicas < 1) throw new Error('deployment has no available replica')
@@ -83,12 +88,12 @@ try {
     namespace,
     deployment: deploymentName,
     readyNodes,
-    expectedNode,
     availableReplicas: deployment.status?.availableReplicas || 0,
     readyPods: readyPods.length,
     podNodes,
     tunnel: 'cloudflared-sidecar',
-    modelEndpoint: 'node-local-proxy',
+    modelProvider: 'openrouter',
+    model: 'ibm-granite/granite-4.1-8b',
   }, null, 2))
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error))

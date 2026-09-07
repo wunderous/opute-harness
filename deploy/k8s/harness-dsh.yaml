@@ -1,6 +1,6 @@
-# The in-cluster public Harness deployment.  The pod uses the A-side node's
-# loopback because the exact Granite 4.1 route is exposed there by an Incus
-# proxy.  DSH itself remains loopback-only; Cloudflare is the only public path.
+# The in-cluster public Harness deployment.  Granite 4.1 is requested from
+# OpenRouter through the secret-backed API key; no local model proxy is part of
+# this workload.  DSH remains pod-local; Cloudflare is the only public path.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -37,9 +37,8 @@ metadata:
     app.kubernetes.io/part-of: opute
     app.kubernetes.io/managed-by: opute-harness
 spec:
-  # One replica is intentional: the exact Granite endpoint is node-local and
-  # the two-node cluster currently has one labelled model-proxy node.  The
-  # cluster itself remains two-node and the pod is restartable on that node.
+  # One replica is sufficient for the public validation surface.  The model is
+  # remote, so the pod has no node affinity or host-network dependency.
   replicas: 1
   revisionHistoryLimit: 2
   selector:
@@ -51,10 +50,6 @@ spec:
         app.kubernetes.io/name: harness-dsh
         app.kubernetes.io/part-of: opute
     spec:
-      # The sidecar must share the node loopback with the Incus Granite proxy.
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
-      nodeName: opute-ha-join-a19
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       containers:
@@ -81,8 +76,11 @@ spec:
                 secretKeyRef:
                   name: opute-harness-mcp
                   key: token
-            - name: OLLAMA_BASE_URL
-              value: http://127.0.0.1:11435/v1
+            - name: OPENROUTER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: opute-harness-openrouter
+                  key: apiKey
             - name: HOME
               value: /tmp/dsh-home
           readinessProbe:

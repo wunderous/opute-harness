@@ -2,9 +2,9 @@
 /**
  * Public, read-only acceptance for the exact IBM Granite 4.1 8B route.
  *
- * The probe uses the hosted Harness entry point, selects the operator-managed
- * local Ollama route, asks for one inventory read, and records the correlated
- * model/tool/session evidence without persisting credentials.
+ * The probe uses the hosted Harness entry point, selects the OpenRouter route,
+ * asks for one inventory read, and records the correlated model/tool/session
+ * evidence without persisting credentials.
  */
 import { randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
@@ -21,7 +21,7 @@ const { default: WebSocket } = await import(pathToFileURL(wsPath).href)
 
 const originRaw = process.env.HARNESS_URL || 'https://harness.opute.io'
 const origin = originRaw.endsWith('/') ? originRaw.slice(0, -1) : originRaw
-const provider = 'ollama'
+const provider = 'openrouter'
 const model = 'ibm-granite/granite-4.1-8b'
 const expectedTool = 'platform__list_managed_vms'
 const prompt = 'Call the exact tool mcp__opute__platform__list_managed_vms once with the empty JSON object {}. Do not answer until that tool returns. Then report each returned VM name, status, and owning host; use only returned tool data and say when a field is unavailable.'
@@ -202,6 +202,15 @@ function modelCatalogSummary(value) {
   }
 }
 
+function modelsForProvider(value, providerId) {
+  const group = Array.isArray(value?.groups)
+    ? value.groups.find(group => group?.id === providerId)
+    : undefined
+  return Array.isArray(group?.models)
+    ? group.models.map(item => item?.id).filter(item => typeof item === 'string')
+    : []
+}
+
 function nestedField(value, keys, depth = 0) {
   if (depth > 8 || value === null || value === undefined) return undefined
   if (isObject(value)) {
@@ -313,7 +322,20 @@ function nameOf(value) { return value?.__toolName || findToolName(value) }
 async function run() {
   await authenticate()
   state.catalog = modelCatalogSummary(await rpc('session/modelCatalog', {}))
-  if (!JSON.stringify(state.catalog).includes(model)) throw new Error('exact Granite model is absent from public catalog')
+  const openRouterModels = modelsForProvider(state.catalog, provider)
+  if (!openRouterModels.includes(model)) {
+    throw new Error('exact Granite model is absent from the OpenRouter catalog')
+  }
+  const localModelGroups = state.catalog.groups
+    .filter(group => group.id !== provider)
+    .filter(group => group.models.includes(model))
+    .map(group => group.id)
+  if (localModelGroups.length > 0) {
+    throw new Error(`exact Granite model is exposed by non-OpenRouter catalog route(s): ${localModelGroups.join(', ')}`)
+  }
+  if (state.catalog.default?.provider !== provider) {
+    throw new Error(`public catalog default provider is ${state.catalog.default?.provider || '<missing>'}, expected OpenRouter`)
+  }
   const created = await rpc('session/create', { request: { sessionId: requestedSessionId, agentPreset: 'opute', maxTokens: 64 } })
   state.sessionId = typeof created?.sessionId === 'string' ? created.sessionId : requestedSessionId
   await rpc('session/selectModel', { request: { sessionId: state.sessionId, provider, model } })
