@@ -65,6 +65,13 @@ this public entry only for `harness.opute.io`; ordinary local DSH sessions
 retain the process-token URL flow. The launch-token file is retained for the
 managed launcher, not as a second public authentication flow.
 
+For the two-node K3s validation cell, use
+[`deploy/k8s/harness-dsh.yaml`](deploy/k8s/harness-dsh.yaml). It keeps the
+same dedicated recipe and loopback ingress, but runs DSH with a pinned
+Cloudflare sidecar in a `hostNetwork` pod on the node that exposes the
+node-local Granite endpoint. Runtime tokens stay in Kubernetes Secrets and
+are never committed; `pnpm validate:k8s-harness` checks the live workload.
+
 `pnpm start` runs `dsh web --patch packages/bundle-opute-web/cordis.patch.yml`
 from the sibling `../deepseek-harness` checkout (the `web` profile includes
 `dsh-web-app`). A custom `opute-web` profile does not serve the GUI unless

@@ -34,3 +34,33 @@ URL. Ordinary local DSH sessions still use the process-token URL.
 
 Put Cloudflare Access (or equivalent) in front of the Host API. DSH still uses
 its process-launch cookie internally.
+
+## K3s deployment
+
+The supported two-node validation deployment is
+[`k8s/harness-dsh.yaml`](k8s/harness-dsh.yaml). It runs the maintained DSH
+image and a pinned Cloudflare connector in one `hostNetwork` pod on the node
+that owns the node-local Granite proxy. DSH still binds only to loopback;
+the connector's existing ingress remains `harness.opute.io` to
+`http://127.0.0.1:3080`.
+
+Build an image from a context containing sibling `opute-harness/` and
+`deepseek-harness/` directories with `Dockerfile.k8s`, import it into the
+selected K3s node's `k8s.io` containerd namespace, then create the two
+runtime-only Secrets before applying the manifest:
+
+```sh
+kubectl create namespace opute-harness
+kubectl create secret generic opute-harness-mcp --namespace opute-harness \
+  --from-literal=token="$OPUTE_MCP_TOKEN"
+kubectl create secret generic opute-harness-tunnel --namespace opute-harness \
+  --from-file=token="$OPUTE_HARNESS_TUNNEL_TOKEN_FILE"
+kubectl apply -f deploy/k8s/harness-dsh.yaml
+```
+
+The token values are intentionally absent from the repository. Run
+`pnpm validate:k8s-harness` with the target K3s `kubectl` context to require
+two Ready nodes, a Ready Harness pod, the expected loopback model endpoint,
+Secret-backed credentials, and the Cloudflare sidecar. Follow that with
+`pnpm validate:public-granite41` for the external exact-model acceptance;
+HTTP health alone is not an end-to-end pass.

@@ -17,7 +17,9 @@
   inject: [webStartup]
   config:
     openBrowser: !!js ctx.webStartup.openBrowser
-    printUrl: true
+    # The process token is useful for local sessions, but must not enter
+    # workload logs in a hosted deployment.
+    printUrl: !!js process.env.OPUTE_HARNESS_PRINT_URL !== '0'
     surfaceContext: false
     trustedHosts: !!js ctx.webStartup.trustedHosts
     publicUrl: !!js process.env.OPUTE_HARNESS_PUBLIC_URL || undefined

@@ -1,0 +1,148 @@
+# The in-cluster public Harness deployment.  The pod uses the A-side node's
+# loopback because the exact Granite 4.1 route is exposed there by an Incus
+# proxy.  DSH itself remains loopback-only; Cloudflare is the only public path.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: opute-harness
+  labels:
+    app.kubernetes.io/part-of: opute
+    app.kubernetes.io/managed-by: opute-harness
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: harness-dsh
+  namespace: opute-harness
+  labels:
+    app.kubernetes.io/name: harness-dsh
+    app.kubernetes.io/part-of: opute
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: harness-dsh
+  ports:
+    - name: http
+      port: 3080
+      targetPort: 3080
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harness-dsh
+  namespace: opute-harness
+  labels:
+    app.kubernetes.io/name: harness-dsh
+    app.kubernetes.io/part-of: opute
+    app.kubernetes.io/managed-by: opute-harness
+spec:
+  # One replica is intentional: the exact Granite endpoint is node-local and
+  # the two-node cluster currently has one labelled model-proxy node.  The
+  # cluster itself remains two-node and the pod is restartable on that node.
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: harness-dsh
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: harness-dsh
+        app.kubernetes.io/part-of: opute
+    spec:
+      # The sidecar must share the node loopback with the Incus Granite proxy.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeName: opute-ha-join-a19
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: dsh
+          image: localhost/opute-harness:k3s
+          imagePullPolicy: Never
+          env:
+            - name: DSH_ROOT
+              value: /workspace/deepseek-harness
+            - name: OPUTE_HARNESS_PRESET_ROOT
+              value: /workspace/opute-harness/packages/bundle-opute-web/presets
+            - name: OPUTE_HARNESS_PORT
+              value: "3080"
+            - name: OPUTE_HARNESS_REQUIRE_MCP
+              value: "1"
+            - name: OPUTE_HARNESS_PRINT_URL
+              value: "0"
+            - name: OPUTE_HARNESS_PUBLIC_URL
+              value: https://harness.opute.io/
+            - name: OPUTE_MCP_ENDPOINT
+              value: https://mcp.opute.io/mcp
+            - name: OPUTE_MCP_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: opute-harness-mcp
+                  key: token
+            - name: OLLAMA_BASE_URL
+              value: http://127.0.0.1:11435/v1
+            - name: HOME
+              value: /tmp/dsh-home
+          readinessProbe:
+            tcpSocket:
+              host: 127.0.0.1
+              port: 3080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 12
+          livenessProbe:
+            tcpSocket:
+              host: 127.0.0.1
+              port: 3080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 900Mi
+          volumeMounts:
+            - name: dsh-home
+              mountPath: /tmp/dsh-home
+        - name: cloudflared
+          image: docker.io/cloudflare/cloudflared:2026.8.2
+          imagePullPolicy: IfNotPresent
+          # The official image is non-root; the Secret volume is mode 0440 so
+          # the token is not readable by the DSH container in this pod.
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          args:
+            - tunnel
+            - --no-autoupdate
+            - run
+            - --token-file
+            - /etc/cloudflared/token
+          volumeMounts:
+            - name: cloudflared-token
+              mountPath: /etc/cloudflared
+              readOnly: true
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      volumes:
+        - name: dsh-home
+          emptyDir: {}
+        - name: cloudflared-token
+          secret:
+            secretName: opute-harness-tunnel
+            items:
+              - key: token
+                path: token
+            defaultMode: 0440
