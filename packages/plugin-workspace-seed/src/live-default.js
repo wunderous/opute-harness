@@ -1,4 +1,4 @@
-export const OPUTE_OPENROUTER_DEFAULT_MODEL = 'anthropic/claude-haiku-4.5'
+export const OPUTE_OPENROUTER_DEFAULT_MODEL = 'ibm-granite/granite-4.2-8b'
 export const OPUTE_OLLAMA_DEFAULT_MODEL = 'llama3.2'
 
 /**

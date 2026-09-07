@@ -212,8 +212,8 @@ if (!workspaceSeed.includes('extraWorkspaceIds') || !workspaceSeed.includes('del
   console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: workspace-seed must drop extra DSH workspaces')
   process.exit(1)
 }
-if (!liveDefault.includes('openrouter') || !liveDefault.includes('anthropic/claude-haiku-4.5')) {
-  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: live default must prefer OpenRouter claude-haiku-4.5')
+if (!liveDefault.includes('openrouter') || !liveDefault.includes('ibm-granite/granite-4.2-8b')) {
+  console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: live default must prefer OpenRouter Granite 4.2 8B')
   process.exit(1)
 }
 

@@ -72,7 +72,7 @@
 - id: agent-default-model
   config:
     provider: openrouter
-    model: anthropic/claude-haiku-4.5
+    model: ibm-granite/granite-4.2-8b
 
 - id: plugin-package-inventory-deepseek
   disabled: true
@@ -86,6 +86,11 @@
       openrouter:
         displayName: OpenRouter
         apiKeyEnv: OPENROUTER_API_KEY
+        models:
+          - id: ibm-granite/granite-4.2-8b
+            name: Granite 4.2 8B
+            contextWindow: 131072
+            maxTokens: 4096
       ollama:
         displayName: Ollama
         api: openai-completions

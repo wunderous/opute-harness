@@ -772,7 +772,7 @@ window.__ModuleLoader__.load({ id: '@opute/dsh-client-ui-opute', factory: (requi
 
   // Keep in sync with src/preferred-model.js. This factory cannot import it.
   var OPENROUTER_PREFERRED = [
-    'anthropic/claude-haiku-4.5',
+    'ibm-granite/granite-4.2-8b',
     'anthropic/claude-3.5-sonnet',
     'openai/gpt-4o',
     'deepseek/deepseek-chat',

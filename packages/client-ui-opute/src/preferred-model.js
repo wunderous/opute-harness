@@ -1,5 +1,5 @@
 export const OPENROUTER_PREFERRED = [
-  'anthropic/claude-haiku-4.5',
+  'ibm-granite/granite-4.2-8b',
   'anthropic/claude-3.5-sonnet',
   'openai/gpt-4o',
   'deepseek/deepseek-chat',

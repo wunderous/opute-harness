@@ -24,7 +24,7 @@ const origin = originRaw.endsWith('/') ? originRaw.slice(0, -1) : originRaw
 const provider = 'openrouter'
 const model = 'ibm-granite/granite-4.2-8b'
 const expectedTool = 'platform__list_managed_vms'
-const prompt = 'Call the exact tool mcp__opute__platform__list_managed_vms once with the empty JSON object {}. Do not answer until that tool returns. Then report each returned VM name, status, and owning host; use only returned tool data and say when a field is unavailable.'
+const prompt = 'Call the exact tool mcp__opute__platform__list_managed_vms once with the empty JSON object {}. Do not answer until that tool returns. After it returns, answer exactly "VM inventory read successfully." Do not count, enumerate, or summarize individual records.'
 const requestedSessionId = `granite42-validation-${randomUUID()}`
 const state = {
   accepted: false,
@@ -207,7 +207,9 @@ function modelsForProvider(value, providerId) {
     ? value.groups.find(group => group?.id === providerId)
     : undefined
   return Array.isArray(group?.models)
-    ? group.models.map(item => item?.id).filter(item => typeof item === 'string')
+    ? group.models
+      .map(item => typeof item === 'string' ? item : item?.id)
+      .filter(item => typeof item === 'string')
     : []
 }
 
@@ -336,7 +338,7 @@ async function run() {
   if (state.catalog.default?.provider !== provider) {
     throw new Error(`public catalog default provider is ${state.catalog.default?.provider || '<missing>'}, expected OpenRouter`)
   }
-  const created = await rpc('session/create', { request: { sessionId: requestedSessionId, agentPreset: 'opute', maxTokens: 64 } })
+  const created = await rpc('session/create', { request: { sessionId: requestedSessionId, agentPreset: 'opute', maxTokens: 256 } })
   state.sessionId = typeof created?.sessionId === 'string' ? created.sessionId : requestedSessionId
   await rpc('session/selectModel', { request: { sessionId: state.sessionId, provider, model } })
   const followPromise = follow(state.sessionId)

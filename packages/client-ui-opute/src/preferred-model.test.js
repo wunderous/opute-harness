@@ -8,12 +8,12 @@ test('prefers a named OpenRouter model over catalog order', () => {
       id: 'openrouter',
       models: [
         { id: 'ai21/jamba-large-1.7' },
-        { id: 'anthropic/claude-haiku-4.5' },
+        { id: 'ibm-granite/granite-4.2-8b' },
       ],
     },
   ])
   assert.equal(first.provider, 'openrouter')
-  assert.equal(first.model, 'anthropic/claude-haiku-4.5')
+  assert.equal(first.model, 'ibm-granite/granite-4.2-8b')
 })
 
 test('falls through to Ollama when OpenRouter is missing', () => {
@@ -28,7 +28,7 @@ test('copies the advertised default effort', () => {
   const [first] = candidateSelections([
     {
       id: 'openrouter',
-      models: [{ id: 'anthropic/claude-haiku-4.5', reasoning: { defaultEffort: 'medium' } }],
+      models: [{ id: 'ibm-granite/granite-4.2-8b', reasoning: { defaultEffort: 'medium' } }],
     },
   ])
   assert.equal(first.reasoningEffort, 'medium')
