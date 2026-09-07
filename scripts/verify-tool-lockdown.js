@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -245,7 +245,15 @@ if (!publicRecipe.includes('default: /usr/bin/node')) {
   console.error('OPUTE_HARNESS_LOCKDOWN_FAIL: public harness must launch source DSH with Node')
   process.exit(1)
 }
-const managedApply = readFileSync(path.join(path.resolve(root, '..', 'opute'), 'scripts', 'apply-harness-web-recipe-via-mcp.ts'), 'utf8')
+const platformRoot = process.env.OPUTE_PLATFORM_ROOT?.trim()
+  ? path.resolve(process.env.OPUTE_PLATFORM_ROOT)
+  : path.resolve(root, '..', 'opute')
+const managedApplyPath = path.join(platformRoot, 'scripts', 'apply-harness-web-recipe-via-mcp.ts')
+if (!existsSync(managedApplyPath)) {
+  console.error(`OPUTE_HARNESS_LOCKDOWN_FAIL: missing Opute platform checkout at ${managedApplyPath}`)
+  process.exit(1)
+}
+const managedApply = readFileSync(managedApplyPath, 'utf8')
 if (!publicRecipe.includes('hostAgentEndpoint:')
   || !managedApply.includes('OPUTE_HOST_AGENT_ENDPOINT=${hostAgentEndpoint}')
   || !managedApply.includes('OPUTE_HOST_AGENT_BEARER_TOKEN=${selectedHostAgentToken}')) {
