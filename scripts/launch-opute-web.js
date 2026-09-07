@@ -5,6 +5,7 @@ import { homedir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { hydrateHarnessMcpEnv, preferPublicMcpIfLoopbackDown } from './hydrate-mcp-env.js'
+import { resolveLaunchTokenFile } from './launch-token-path.js'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const presetRoot = path.join(root, 'packages', 'bundle-opute-web', 'presets')
@@ -12,8 +13,7 @@ const patch = path.join(root, 'packages', 'bundle-opute-web', 'cordis.source.pat
 const dshRoot = process.env.DSH_ROOT
   ? path.resolve(process.env.DSH_ROOT)
   : path.resolve(root, '..', 'deepseek-harness')
-const launchTokenFile = process.env.OPUTE_HARNESS_LAUNCH_TOKEN_FILE
-  || path.join(homedir(), '.config', 'opute', 'harness-opute-dsh.launch-token')
+const launchTokenFile = resolveLaunchTokenFile(process.env.OPUTE_HARNESS_LAUNCH_TOKEN_FILE, homedir())
 
 process.env.OPUTE_HARNESS_PRESET_ROOT ??= presetRoot
 const explicitEndpoint = Boolean(process.env.OPUTE_MCP_ENDPOINT)
