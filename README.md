@@ -50,6 +50,12 @@ added, use the exact OpenRouter `ibm-granite/granite-4.2-8b` route rather than
 a local model. If OpenRouter does not advertise that model, the lane must
 remain blocked.
 
+Run the hosted acceptance probe with `pnpm validate:public-granite42`. It uses
+the public DSH namespace by default. For a disposable Harness pointed directly
+at a local Platform Bridge, set
+`HARNESS_GRANITE42_SURFACE=local-bridge`; the selector is allowlisted and keeps
+the public contract unchanged.
+
 `pnpm verify:coexistence` additionally checks a sibling Platform checkout and
 the public chat origin, so it remains an operator/local integration gate. Its
 unit test skips honestly in a standalone GitHub checkout where `../opute` is

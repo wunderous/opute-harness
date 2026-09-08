@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { resolveGranite42Surface } from './granite42-contract.js'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dshRoot = process.env.DSH_ROOT
@@ -23,8 +24,9 @@ const originRaw = process.env.HARNESS_URL || 'https://harness.opute.io'
 const origin = originRaw.endsWith('/') ? originRaw.slice(0, -1) : originRaw
 const provider = 'openrouter'
 const model = 'ibm-granite/granite-4.2-8b'
-const expectedTool = 'platform__list_managed_vms'
-const prompt = 'Call the exact tool mcp__opute__platform__list_managed_vms once with the empty JSON object {}. Do not answer until that tool returns. After it returns, answer exactly "VM inventory read successfully." Do not count, enumerate, or summarize individual records.'
+const graniteSurface = resolveGranite42Surface(process.env.HARNESS_GRANITE42_SURFACE || 'public')
+const { expectedTool, promptTool } = graniteSurface
+const prompt = `Call the exact tool ${promptTool} once with the empty JSON object {}. Do not answer until that tool returns. After it returns, answer exactly "VM inventory read successfully." Do not count, enumerate, or summarize individual records.`
 const requestedSessionId = `granite42-validation-${randomUUID()}`
 const state = {
   accepted: false,
@@ -379,6 +381,7 @@ async function run() {
     accepted: state.accepted,
     exactModelHeader,
     selected: { provider, model },
+    surface: graniteSurface.name,
     sessionId: state.sessionId,
     expectedTool,
     eventTypes: state.eventTypes,
@@ -412,6 +415,7 @@ run().catch(error => {
     status: 'BLOCKED',
     error: String(error),
     selected: { provider, model },
+    surface: graniteSurface.name,
     catalog: state.catalog,
     prompt,
   }
